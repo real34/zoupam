@@ -1,61 +1,61 @@
 module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
 import Html.App as Html
-import ConfigInput exposing (..)
+import Configurator exposing (..)
 
 
 main =
-    Html.programWithFlags
+    Html.program
         { init = init
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , update = update
         , view = view
         }
 
 
 type alias Model =
-    { redmineConfig : ConfigInput.Config
-    , togglConfig : ConfigInput.Config
-    }
+    { config : Configurator.Config }
 
 
-type alias Stored =
-    { redmineKey : String, togglKey : String }
-
-
-init : Stored -> ( Model, Cmd Msg )
-init { redmineKey, togglKey } =
-    ( Model (ConfigInput.init "redmine" "Redmine" redmineKey) (ConfigInput.init "toggl" "Toggl" togglKey)
-    , Cmd.none
-    )
+init : ( Model, Cmd Msg )
+init =
+    let
+        ( initModel, initCmd ) =
+            Configurator.init "" ""
+    in
+        Model initModel
+            ! [ Cmd.map UpdateConfig initCmd ]
 
 
 type Msg
     = NoOp
-    | UpdateConfig ConfigInput.Config ConfigInput.Msg
+    | UpdateConfig Configurator.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            model ! []
 
-        UpdateConfig model msg ->
+        UpdateConfig msg ->
             let
-                ( subModel, subCmd ) =
-                    ConfigInput.update msg model
+                ( subConfig, subMsg ) =
+                    Configurator.update msg model.config
             in
-                ( { model | redmineConfig = subModel }, Cmd.map UpdateConfig subCmd )
+                { model | config = subConfig }
+                    ! [ Cmd.map UpdateConfig subMsg ]
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.map UpdateConfig (Configurator.subscriptions)
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Zoupam v3" ]
-        , Html.map (UpdateConfig model.redmineConfig) (ConfigInput.view model.redmineConfig)
-        , Html.map (UpdateConfig model.togglConfig) (ConfigInput.view model.togglConfig)
+        , Html.map UpdateConfig (Configurator.view model.config)
         ]

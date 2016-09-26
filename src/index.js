@@ -2,14 +2,14 @@ require('./main.css');
 
 var Elm = require('./Main.elm');
 
-var redmineKey = window.localStorage.getItem('redmine');
-var togglKey = window.localStorage.getItem('toggl');
-redmineKey = redmineKey ? JSON.parse(redmineKey) : ''
-togglKey = togglKey ? JSON.parse(togglKey) : ''
-console.log({redmineKey, togglKey})
-var app = Elm.Main.fullscreen({redmineKey, togglKey});
+var app = Elm.Main.fullscreen();
 
-app.ports.saveKey.subscribe(function(arg) {
-  var [id, key] = arg;
-  window.localStorage.setItem(id, JSON.stringify(key));
+app.ports.saveConfig.subscribe(function(config) {
+  window.localStorage.setItem('config', JSON.stringify(config));
+})
+
+app.ports.checkStoredConfig.subscribe(function(arg) {
+  var config = window.localStorage.getItem('config');
+  config = config ? JSON.parse(config) : { redmineKey: '', togglKey: ''}
+  app.ports.getStoredConfig.send(config);
 })
