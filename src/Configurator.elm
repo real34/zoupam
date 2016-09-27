@@ -1,36 +1,50 @@
-port module Configurator exposing (..)
+port module Configurator exposing (Config, update, view, init, subscriptions, Msg)
 
 import Html exposing (..)
 import Views.ConfigInput as ConfigInput
 import Dict exposing (Dict)
-import Debug
 
 
-port saveConfig : List ( String, String ) -> Cmd msg
+port saveConfig : StoredConfig -> Cmd msg
 
 
 port checkStoredConfig : () -> Cmd msg
 
 
-port getStoredConfig : (List ( String, String ) -> msg) -> Sub msg
+port getStoredConfig : (StoredConfig -> msg) -> Sub msg
+
+
+type alias StoredConfig =
+    List ( String, String )
 
 
 type alias Config =
     Dict String String
 
 
+redmineKey : String
+redmineKey =
+    "redmine"
+
+
+togglKey : String
+togglKey =
+    "toggl"
+
+
+emptyConfig : Config
 emptyConfig =
     Dict.fromList []
 
 
-init : Config -> ( Config, Cmd Msg )
-init config =
-    config ! [ checkStoredConfig () ]
+init : ( Config, Cmd Msg )
+init =
+    emptyConfig ! [ checkStoredConfig () ]
 
 
 type Msg
     = UpdateConfig String String
-    | StoredKeys (List ( String, String ))
+    | StoredKeys StoredConfig
 
 
 update : Msg -> Config -> ( Config, Cmd Msg )
@@ -39,9 +53,9 @@ update msg config =
         UpdateConfig configType str ->
             let
                 newConfig =
-                    Dict.insert configType str config
+                    config |> Dict.insert configType str
             in
-                newConfig ! [ saveConfig (Dict.toList newConfig) ]
+                newConfig ! [ Dict.toList newConfig |> saveConfig ]
 
         StoredKeys storedConfig ->
             Dict.fromList storedConfig
@@ -56,6 +70,12 @@ subscriptions =
 view : Config -> Html Msg
 view config =
     div []
-        [ ConfigInput.view (UpdateConfig "redmine") (ConfigInput.Field "redmine" "Redmine" (Maybe.withDefault "" (Dict.get "redmine" config)))
-        , ConfigInput.view (UpdateConfig "toggl") (ConfigInput.Field "toggl" "Toggl" (Maybe.withDefault "" (Dict.get "toggl" config)))
+        [ Dict.get redmineKey config
+            |> Maybe.withDefault ""
+            |> ConfigInput.Field redmineKey "Redmine"
+            |> ConfigInput.view (UpdateConfig redmineKey)
+        , Dict.get togglKey config
+            |> Maybe.withDefault ""
+            |> ConfigInput.Field togglKey "Toggl"
+            |> ConfigInput.view (UpdateConfig togglKey)
         ]

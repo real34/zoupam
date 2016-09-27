@@ -22,7 +22,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         ( initModel, initCmd ) =
-            Configurator.init Configurator.emptyConfig
+            Configurator.init
     in
         Model initModel
             ! [ Cmd.map UpdateConfig initCmd ]
@@ -50,12 +50,14 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map UpdateConfig (Configurator.subscriptions)
+    Configurator.subscriptions
+        |> Sub.map UpdateConfig
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Zoupam v3" ]
-        , Html.map UpdateConfig (Configurator.view model.config)
+        , Configurator.view model.config
+            |> Html.map UpdateConfig
         ]

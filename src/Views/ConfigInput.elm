@@ -1,4 +1,4 @@
-module Views.ConfigInput exposing (..)
+module Views.ConfigInput exposing (Field, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
