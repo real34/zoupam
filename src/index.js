@@ -10,6 +10,6 @@ app.ports.saveConfig.subscribe(function(config) {
 
 app.ports.checkStoredConfig.subscribe(function(arg) {
   var config = window.localStorage.getItem('config');
-  config = config ? JSON.parse(config) : { redmineKey: '', togglKey: ''}
+  config = config ? JSON.parse(config) : []
   app.ports.getStoredConfig.send(config);
 })

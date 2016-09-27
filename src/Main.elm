@@ -22,7 +22,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         ( initModel, initCmd ) =
-            Configurator.init "" ""
+            Configurator.init Configurator.emptyConfig
     in
         Model initModel
             ! [ Cmd.map UpdateConfig initCmd ]
