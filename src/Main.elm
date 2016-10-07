@@ -2,7 +2,6 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.App as Html
-import Html.Events exposing (onClick)
 import Configurator exposing (..)
 import Http
 import RedmineAPI
@@ -37,9 +36,7 @@ init =
 type Msg
     = NoOp
     | UpdateConfig Configurator.Msg
-    | FetchSuccess (List String)
-    | FetchFail Http.Error
-    | Go
+    | UpdateProjects Projects.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -56,26 +53,13 @@ update msg model =
                 { model | config = subConfig }
                     ! [ Cmd.map UpdateConfig subMsg ]
 
-        Go ->
+        UpdateProjects msg ->
             let
-                projects =
-                    model.projects
+                ( subProjects, subMsg ) =
+                    Projects.update msg model.projects
             in
-                { model | projects = { projects | loading = True } } ! [ RedmineAPI.getProjects (Configurator.getRedmineKey model.config) FetchFail FetchSuccess ]
-
-        FetchSuccess fetchedProjects ->
-            let
-                projects =
-                    model.projects
-            in
-                { model | projects = { projects | loading = False, projects = Just (Projects.emptyProject :: fetchedProjects) } } ! []
-
-        FetchFail error ->
-            let
-                projects =
-                    model.projects
-            in
-                { model | projects = { projects | loading = False } } ! []
+                { model | projects = subProjects }
+                    ! [ Cmd.map UpdateProjects subMsg ]
 
 
 subscriptions : Model -> Sub Msg
@@ -90,5 +74,6 @@ view model =
         [ h1 [] [ text "Zoupam v3" ]
         , Configurator.view model.config
             |> Html.map UpdateConfig
-        , Projects.view Go model.projects
+        , Projects.view (Configurator.getRedmineKey model.config) model.projects
+            |> Html.map UpdateProjects
         ]

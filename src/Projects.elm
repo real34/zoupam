@@ -1,16 +1,24 @@
 module Projects exposing (..)
 
 import Html exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (value)
 import RedmineAPI
 import Http
 
 
 type alias Model =
-    { projects : Maybe (List String)
+    { projects : Maybe (List ( Int, String ))
     , loading : Bool
     , redmineKey : String
     }
+
+
+type Msg
+    = ProjectSelect String
+    | Go String
+    | FetchSuccess (List ( Int, String ))
+    | FetchFail Http.Error
 
 
 init : Model
@@ -21,25 +29,45 @@ init =
     }
 
 
-emptyProject : String
+emptyProject : ( Int, String )
 emptyProject =
-    "--- Veuillez sélectionner un projet ---"
+    ( -1, "--- Veuillez sélectionner un projet ---" )
 
 
-view : msg -> Model -> Html msg
-view msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Go redmineKey ->
+            let
+                projects =
+                    model.projects
+            in
+                { model | loading = True } ! [ RedmineAPI.getProjects redmineKey FetchFail FetchSuccess ]
+
+        ProjectSelect projectId ->
+            model ! []
+
+        FetchSuccess fetchedProjects ->
+            { model | loading = False, projects = Just (emptyProject :: fetchedProjects) } ! []
+
+        FetchFail error ->
+            { model | loading = False } ! []
+
+
+view : String -> Model -> Html Msg
+view redmineKey model =
     case model.loading of
         False ->
             case model.projects of
                 Nothing ->
                     div []
-                        [ button [ onClick msg ] [ text "Go!" ]
+                        [ button [ onClick (Go redmineKey) ] [ text "Go!" ]
                         ]
 
                 Just projects ->
                     div []
-                        [ select [] (List.map (\project -> option [] [ text project ]) projects)
-                        , button [ onClick msg ] [ text "Go!" ]
+                        [ select [ onInput ProjectSelect ] (List.map (\( projectId, projectName ) -> option [ projectId |> toString |> value ] [ text projectName ]) projects)
+                        , button [ onClick (Go redmineKey) ] [ text "Go!" ]
                         ]
 
         True ->

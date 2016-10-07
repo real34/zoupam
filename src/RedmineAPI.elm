@@ -10,7 +10,7 @@ redmineUrl =
     "http://projets.occitech.fr"
 
 
-getProjects : String -> (Http.Error -> msg) -> (List String -> msg) -> Cmd msg
+getProjects : String -> (Http.Error -> msg) -> (List ( Int, String ) -> msg) -> Cmd msg
 getProjects key errorMsg msg =
     let
         url =
@@ -19,6 +19,6 @@ getProjects key errorMsg msg =
         Http.get projectsDecoder url |> Task.perform errorMsg msg
 
 
-projectsDecoder : Json.Decoder (List String)
+projectsDecoder : Json.Decoder (List ( Int, String ))
 projectsDecoder =
-    ("projects" := Json.list ("name" := Json.string))
+    ("projects" := Json.list (Json.object2 (,) ("id" := Json.int) ("name" := Json.string)))
