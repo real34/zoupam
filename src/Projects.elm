@@ -13,12 +13,6 @@ type alias Model =
     }
 
 
-type Msg
-    = FetchSuccess (List String)
-    | FetchFail Http.Error
-    | Go
-
-
 init : Model
 init =
     { projects = Nothing
@@ -32,33 +26,20 @@ emptyProject =
     "--- Veuillez sélectionner un projet ---"
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
-        Go ->
-            { model | loading = True } ! [ RedmineAPI.getProjects model.redmineKey FetchFail FetchSuccess ]
-
-        FetchSuccess projects ->
-            { model | loading = False, projects = Just (emptyProject :: projects) } ! []
-
-        FetchFail error ->
-            { model | loading = False } ! []
-
-
-view : Model -> Html Msg
-view model =
+view : msg -> Model -> Html msg
+view msg model =
     case model.loading of
         False ->
             case model.projects of
                 Nothing ->
                     div []
-                        [ button [ onClick Go ] [ text "Go!" ]
+                        [ button [ onClick msg ] [ text "Go!" ]
                         ]
 
                 Just projects ->
                     div []
                         [ select [] (List.map (\project -> option [] [ text project ]) projects)
-                        , button [ onClick Go ] [ text "Go!" ]
+                        , button [ onClick msg ] [ text "Go!" ]
                         ]
 
         True ->

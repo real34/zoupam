@@ -6,6 +6,7 @@ import Html.Events exposing (onClick)
 import Configurator exposing (..)
 import Http
 import RedmineAPI
+import Projects
 
 
 main =
@@ -19,18 +20,7 @@ main =
 
 type alias Model =
     { config : Configurator.Config
-    , projects :
-        { projects : Maybe (List String)
-        , loading : Bool
-        , redmineKey : String
-        }
-    }
-
-
-initProjects =
-    { projects = Nothing
-    , loading = False
-    , redmineKey = ""
+    , projects : Projects.Model
     }
 
 
@@ -40,7 +30,7 @@ init =
         ( initModel, initCmd ) =
             Configurator.init
     in
-        Model initModel initProjects
+        Model initModel Projects.init
             ! [ Cmd.map UpdateConfig initCmd ]
 
 
@@ -50,11 +40,6 @@ type Msg
     | FetchSuccess (List String)
     | FetchFail Http.Error
     | Go
-
-
-emptyProject : String
-emptyProject =
-    "--- Veuillez sélectionner un projet ---"
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,7 +68,7 @@ update msg model =
                 projects =
                     model.projects
             in
-                { model | projects = { projects | loading = False, projects = Just (emptyProject :: fetchedProjects) } } ! []
+                { model | projects = { projects | loading = False, projects = Just (Projects.emptyProject :: fetchedProjects) } } ! []
 
         FetchFail error ->
             let
@@ -105,20 +90,5 @@ view model =
         [ h1 [] [ text "Zoupam v3" ]
         , Configurator.view model.config
             |> Html.map UpdateConfig
-        , case model.projects.loading of
-            False ->
-                case model.projects.projects of
-                    Nothing ->
-                        div []
-                            [ button [ onClick Go ] [ text "Go!" ]
-                            ]
-
-                    Just projects ->
-                        div []
-                            [ select [] (List.map (\project -> option [] [ text project ]) projects)
-                            , button [ onClick Go ] [ text "Go!" ]
-                            ]
-
-            True ->
-                text "CHARGEMENT"
+        , Projects.view Go model.projects
         ]
