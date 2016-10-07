@@ -2,8 +2,10 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.App as Html
+import Html.Events exposing (onClick)
 import Configurator exposing (..)
-import Projects exposing (..)
+import Http
+import RedmineAPI
 
 
 main =
@@ -17,7 +19,18 @@ main =
 
 type alias Model =
     { config : Configurator.Config
-    , projects : Projects.Model
+    , projects :
+        { projects : Maybe (List String)
+        , loading : Bool
+        , redmineKey : String
+        }
+    }
+
+
+initProjects =
+    { projects = Nothing
+    , loading = False
+    , redmineKey = ""
     }
 
 
@@ -27,14 +40,21 @@ init =
         ( initModel, initCmd ) =
             Configurator.init
     in
-        Model initModel Projects.init
+        Model initModel initProjects
             ! [ Cmd.map UpdateConfig initCmd ]
 
 
 type Msg
     = NoOp
     | UpdateConfig Configurator.Msg
-    | UpdateProjects Projects.Msg
+    | FetchSuccess (List String)
+    | FetchFail Http.Error
+    | Go
+
+
+emptyProject : String
+emptyProject =
+    "--- Veuillez sélectionner un projet ---"
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -51,13 +71,26 @@ update msg model =
                 { model | config = subConfig }
                     ! [ Cmd.map UpdateConfig subMsg ]
 
-        UpdateProjects msg ->
+        Go ->
             let
-                ( subProjects, subMsg ) =
-                    Projects.update msg model.projects
+                projects =
+                    model.projects
             in
-                { model | projects = subProjects }
-                    ! [ Cmd.map UpdateProjects subMsg ]
+                { model | projects = { projects | loading = True } } ! [ RedmineAPI.getProjects (Configurator.getRedmineKey model.config) FetchFail FetchSuccess ]
+
+        FetchSuccess fetchedProjects ->
+            let
+                projects =
+                    model.projects
+            in
+                { model | projects = { projects | loading = False, projects = Just (emptyProject :: fetchedProjects) } } ! []
+
+        FetchFail error ->
+            let
+                projects =
+                    model.projects
+            in
+                { model | projects = { projects | loading = False } } ! []
 
 
 subscriptions : Model -> Sub Msg
@@ -72,6 +105,20 @@ view model =
         [ h1 [] [ text "Zoupam v3" ]
         , Configurator.view model.config
             |> Html.map UpdateConfig
-        , Projects.view model.projects
-            |> Html.map UpdateProjects
+        , case model.projects.loading of
+            False ->
+                case model.projects.projects of
+                    Nothing ->
+                        div []
+                            [ button [ onClick Go ] [ text "Go!" ]
+                            ]
+
+                    Just projects ->
+                        div []
+                            [ select [] (List.map (\project -> option [] [ text project ]) projects)
+                            , button [ onClick Go ] [ text "Go!" ]
+                            ]
+
+            True ->
+                text "CHARGEMENT"
         ]

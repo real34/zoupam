@@ -1,15 +1,15 @@
 module Projects exposing (..)
 
 import Html exposing (..)
-import Http
 import Html.Events exposing (onClick)
-import Json.Decode as Json exposing ((:=))
-import Task
+import RedmineAPI
+import Http
 
 
 type alias Model =
     { projects : Maybe (List String)
     , loading : Bool
+    , redmineKey : String
     }
 
 
@@ -23,12 +23,8 @@ init : Model
 init =
     { projects = Nothing
     , loading = False
+    , redmineKey = ""
     }
-
-
-redmineUrl : String
-redmineUrl =
-    "http://projets.occitech.fr"
 
 
 emptyProject : String
@@ -40,10 +36,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Go ->
-            { model | loading = True } ! [ getProjects "2df7fd0acd7d7f09966a746458aa78ab3fdc6ebc" ]
+            { model | loading = True } ! [ RedmineAPI.getProjects model.redmineKey FetchFail FetchSuccess ]
 
         FetchSuccess projects ->
-            { model | loading = False, projects = Just projects } ! []
+            { model | loading = False, projects = Just (emptyProject :: projects) } ! []
 
         FetchFail error ->
             { model | loading = False } ! []
@@ -67,17 +63,3 @@ view model =
 
         True ->
             text "CHARGEMENT"
-
-
-getProjects : String -> Cmd Msg
-getProjects key =
-    let
-        url =
-            Http.url (redmineUrl ++ "/projects.json") [ ( "key", key ) ]
-    in
-        Http.get projectsDecoder url |> Task.perform FetchFail FetchSuccess
-
-
-projectsDecoder : Json.Decoder (List String)
-projectsDecoder =
-    ("projects" := Json.list ("name" := Json.string))
