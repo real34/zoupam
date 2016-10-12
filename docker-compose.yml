@@ -1,0 +1,12 @@
+elm:
+  build: .
+  volumes:
+    - .:/project
+  entrypoint: elm-app
+  command: start
+  working_dir: /project
+  ports:
+    - 3000
+  environment:
+    - VIRTUAL_HOST=zoupam.test
+    - VIRTUAL_PORT=3000
