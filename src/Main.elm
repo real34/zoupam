@@ -8,8 +8,7 @@ import Http
 import RedmineAPI
 import TogglAPI
 import Projects
-import Dict exposing (Dict)
-import Debug
+import Issues
 
 
 main =
@@ -24,7 +23,7 @@ main =
 type alias Model =
     { config : Configurator.Config
     , projects : Projects.Model
-    , issues : Dict String (List RedmineAPI.Issue)
+    , issues : Issues.Model
     }
 
 
@@ -34,7 +33,7 @@ init =
         ( initModel, initCmd ) =
             Configurator.init
     in
-        Model initModel Projects.init Dict.empty
+        Model initModel Projects.init Issues.init
             ! [ Cmd.map UpdateConfig initCmd ]
 
 
@@ -42,12 +41,10 @@ type Msg
     = NoOp
     | UpdateConfig Configurator.Msg
     | UpdateProjects Projects.Msg
+    | UpdateIssues Issues.Msg
     | Zou
-    | GoIssues
     | FetchSuccess Http.Response
     | FetchFail Http.RawError
-    | Fail Http.Error
-    | Success (List RedmineAPI.Issue)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -58,22 +55,24 @@ update msg model =
 
         UpdateConfig msg ->
             let
-                ( subConfig, subMsg ) =
+                ( subConfig, subCmd ) =
                     Configurator.update msg model.config
             in
-                { model | config = subConfig }
-                    ! [ Cmd.map UpdateConfig subMsg ]
+                { model | config = subConfig } ! [ Cmd.map UpdateConfig subCmd ]
 
         UpdateProjects msg ->
             let
-                ( subProjects, subMsg ) =
+                ( subProjects, subCmd ) =
                     Projects.update msg model.projects
             in
-                { model | projects = subProjects }
-                    ! [ Cmd.map UpdateProjects subMsg ]
+                { model | projects = subProjects } ! [ Cmd.map UpdateProjects subCmd ]
 
-        GoIssues ->
-            model ! [ RedmineAPI.getIssues (Configurator.getRedmineKey model.config) "104" Fail Success ]
+        UpdateIssues msg ->
+            let
+                ( subIssues, subCmd ) =
+                    Issues.update msg model.issues
+            in
+                { model | issues = subIssues } ! [ Cmd.map UpdateIssues subCmd ]
 
         Zou ->
             model ! [ TogglAPI.getDetails FetchFail FetchSuccess ]
@@ -83,35 +82,6 @@ update msg model =
 
         FetchFail _ ->
             model ! []
-
-        Success issues ->
-            let
-                filteredIssues =
-                    List.foldr issuesToDict Dict.empty issues
-            in
-                { model | issues = filteredIssues }
-                    ! []
-                    |> Debug.log "model"
-
-        Fail error ->
-            model ! []
-
-
-issuesToDict : RedmineAPI.Issue -> Dict String (List RedmineAPI.Issue) -> Dict String (List RedmineAPI.Issue)
-issuesToDict issue dict =
-    let
-        version =
-            Maybe.withDefault { id = 0, name = "Unknown" } issue.version
-
-        existing =
-            Dict.get (version.name) dict
-    in
-        case existing of
-            Nothing ->
-                Dict.insert version.name [ issue ] dict
-
-            Just list ->
-                Dict.insert version.name (issue :: list) dict
 
 
 subscriptions : Model -> Sub Msg
@@ -128,16 +98,7 @@ view model =
             |> Html.map UpdateConfig
         , Projects.view (Configurator.getRedmineKey model.config) model.projects
             |> Html.map UpdateProjects
-        , button [ onClick GoIssues ] [ text "Load Issues" ]
         , button [ onClick Zou ] [ text "Zou" ]
-        , div []
-            (List.map
-                (\( key, issues ) ->
-                    div []
-                        [ h3 [] [ text key ]
-                        , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
-                        ]
-                )
-                (Dict.toList model.issues)
-            )
+        , Issues.view (Configurator.getRedmineKey model.config) "104" model.issues
+            |> Html.map UpdateIssues
         ]
