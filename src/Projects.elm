@@ -17,7 +17,7 @@ type alias Model =
 
 type Msg
     = ProjectSelect String
-    | Go String
+    | FetchStart String
     | FetchSuccess (List ( Int, String ))
     | FetchFail Http.Error
 
@@ -39,7 +39,7 @@ emptyProject =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Go redmineKey ->
+        FetchStart redmineKey ->
             let
                 projects =
                     model.projects
@@ -68,13 +68,13 @@ view redmineKey model =
             case model.projects of
                 Nothing ->
                     div []
-                        [ button [ onClick (Go redmineKey) ] [ text "Go!" ]
+                        [ button [ onClick (FetchStart redmineKey) ] [ text "Fetch projects" ]
                         ]
 
                 Just projects ->
                     div []
                         [ select [ onInput ProjectSelect ] (List.map (\( projectId, projectName ) -> option [ projectId |> toString |> value ] [ text projectName ]) projects)
-                        , button [ onClick (Go redmineKey) ] [ text "Go!" ]
+                        , button [ onClick (FetchStart redmineKey) ] [ text "Fetch projects" ]
                         ]
 
         True ->

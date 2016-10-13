@@ -8,7 +8,9 @@ import RedmineAPI
 
 
 type alias Model =
-    Dict String (List RedmineAPI.Issue)
+    { issues : Dict String (List RedmineAPI.Issue)
+    , loading : Bool
+    }
 
 
 type Msg
@@ -17,22 +19,22 @@ type Msg
     | Success (List RedmineAPI.Issue)
 
 
-init : Dict a b
+init : Model
 init =
-    Dict.empty
+    Model Dict.empty False
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GoIssues redmineKey projectId ->
-            model ! [ RedmineAPI.getIssues redmineKey projectId Fail Success ]
+            { model | loading = True } ! [ RedmineAPI.getIssues redmineKey projectId Fail Success ]
 
         Success issues ->
-            List.foldr issuesToDict Dict.empty issues ! []
+            { model | loading = False, issues = List.foldr issuesToDict Dict.empty issues } ! []
 
         Fail error ->
-            model ! []
+            { model | loading = False } ! []
 
 
 issuesToDict : RedmineAPI.Issue -> Dict String (List RedmineAPI.Issue) -> Dict String (List RedmineAPI.Issue)
@@ -55,25 +57,33 @@ issuesToDict issue dict =
 view : String -> Maybe String -> Model -> Html Msg
 view redmineKey projectId model =
     let
-        load =
+        loadButton =
             case projectId of
                 Nothing ->
-                    span [] [ text "Please select a project" ]
+                    span [] []
 
                 Just project ->
                     button [ onClick (GoIssues redmineKey project) ]
                         [ text "Load Issues" ]
+
+        result =
+            case model.loading of
+                False ->
+                    div []
+                        (List.map
+                            (\( key, issues ) ->
+                                div []
+                                    [ h3 [] [ text key ]
+                                    , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
+                                    ]
+                            )
+                            (Dict.toList model.issues)
+                        )
+
+                True ->
+                    span [] [ text "LOADING" ]
     in
         div []
-            [ load
-            , div []
-                (List.map
-                    (\( key, issues ) ->
-                        div []
-                            [ h3 [] [ text key ]
-                            , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
-                            ]
-                    )
-                    (Dict.toList model)
-                )
+            [ loadButton
+            , result
             ]

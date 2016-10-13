@@ -38,8 +38,7 @@ init =
 
 
 type Msg
-    = NoOp
-    | UpdateConfig Configurator.Msg
+    = UpdateConfig Configurator.Msg
     | UpdateProjects Projects.Msg
     | UpdateIssues Issues.Msg
 
@@ -47,9 +46,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            model ! []
-
         UpdateConfig msg ->
             let
                 ( subConfig, subCmd ) =
