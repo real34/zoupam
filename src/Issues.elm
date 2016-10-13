@@ -41,7 +41,7 @@ issuesToDict : RedmineAPI.Issue -> Dict String (List RedmineAPI.Issue) -> Dict S
 issuesToDict issue dict =
     let
         version =
-            Maybe.withDefault { id = 0, name = "Unknown" } issue.version
+            Maybe.withDefault { id = 0, name = "Version non renseignée" } issue.version
 
         existing =
             Dict.get (version.name) dict
@@ -64,7 +64,7 @@ view redmineKey projectId model =
 
                 Just project ->
                     button [ onClick (GoIssues redmineKey project) ]
-                        [ text "Load Issues" ]
+                        [ text "Récupérer les demandes" ]
 
         result =
             case model.loading of
@@ -73,7 +73,7 @@ view redmineKey projectId model =
                         (List.map
                             (\( key, issues ) ->
                                 div []
-                                    [ h3 [] [ text key ]
+                                    [ h2 [] [ text key ]
                                     , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
                                     ]
                             )
@@ -81,7 +81,7 @@ view redmineKey projectId model =
                         )
 
                 True ->
-                    span [] [ text "LOADING" ]
+                    span [] [ text "CHARGEMENT" ]
     in
         div []
             [ loadButton

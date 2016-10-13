@@ -68,13 +68,13 @@ view redmineKey model =
             case model.projects of
                 Nothing ->
                     div []
-                        [ button [ onClick (FetchStart redmineKey) ] [ text "Fetch projects" ]
+                        [ button [ onClick (FetchStart redmineKey) ] [ text "Récupérer les projets" ]
                         ]
 
                 Just projects ->
                     div []
                         [ select [ onInput ProjectSelect ] (List.map (\( projectId, projectName ) -> option [ projectId |> toString |> value ] [ text projectName ]) projects)
-                        , button [ onClick (FetchStart redmineKey) ] [ text "Fetch projects" ]
+                        , button [ onClick (FetchStart redmineKey) ] [ text "Récupérer les projets" ]
                         ]
 
         True ->
