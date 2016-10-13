@@ -42,9 +42,6 @@ type Msg
     | UpdateConfig Configurator.Msg
     | UpdateProjects Projects.Msg
     | UpdateIssues Issues.Msg
-    | Zou
-    | FetchSuccess Http.Response
-    | FetchFail Http.RawError
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -74,15 +71,6 @@ update msg model =
             in
                 { model | issues = subIssues } ! [ Cmd.map UpdateIssues subCmd ]
 
-        Zou ->
-            model ! [ TogglAPI.getDetails FetchFail FetchSuccess ]
-
-        FetchSuccess _ ->
-            model ! []
-
-        FetchFail _ ->
-            model ! []
-
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -98,7 +86,6 @@ view model =
             |> Html.map UpdateConfig
         , Projects.view (Configurator.getRedmineKey model.config) model.projects
             |> Html.map UpdateProjects
-        , button [ onClick Zou ] [ text "Zou" ]
-        , Issues.view (Configurator.getRedmineKey model.config) "104" model.issues
+        , Issues.view (Configurator.getRedmineKey model.config) model.projects.selected model.issues
             |> Html.map UpdateIssues
         ]

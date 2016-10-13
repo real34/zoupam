@@ -9,6 +9,7 @@ import Http
 
 type alias Model =
     { projects : Maybe (List ( Int, String ))
+    , selected : Maybe String
     , loading : Bool
     , redmineKey : String
     }
@@ -24,6 +25,7 @@ type Msg
 init : Model
 init =
     { projects = Nothing
+    , selected = Nothing
     , loading = False
     , redmineKey = ""
     }
@@ -45,7 +47,12 @@ update msg model =
                 { model | loading = True } ! [ RedmineAPI.getProjects redmineKey FetchFail FetchSuccess ]
 
         ProjectSelect projectId ->
-            model ! []
+            case projectId of
+                "-1" ->
+                    { model | selected = Nothing } ! []
+
+                _ ->
+                    { model | selected = Just projectId } ! []
 
         FetchSuccess fetchedProjects ->
             { model | loading = False, projects = Just (emptyProject :: fetchedProjects) } ! []

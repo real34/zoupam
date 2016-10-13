@@ -52,19 +52,28 @@ issuesToDict issue dict =
                 Dict.insert version.name (issue :: list) dict
 
 
-view : String -> String -> Model -> Html Msg
+view : String -> Maybe String -> Model -> Html Msg
 view redmineKey projectId model =
-    div []
-        [ button [ onClick (GoIssues redmineKey projectId) ]
-            [ text "Load Issues" ]
-        , div []
-            (List.map
-                (\( key, issues ) ->
-                    div []
-                        [ h3 [] [ text key ]
-                        , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
-                        ]
+    let
+        load =
+            case projectId of
+                Nothing ->
+                    span [] [ text "Please select a project" ]
+
+                Just project ->
+                    button [ onClick (GoIssues redmineKey project) ]
+                        [ text "Load Issues" ]
+    in
+        div []
+            [ load
+            , div []
+                (List.map
+                    (\( key, issues ) ->
+                        div []
+                            [ h3 [] [ text key ]
+                            , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
+                            ]
+                    )
+                    (Dict.toList model)
                 )
-                (Dict.toList model)
-            )
-        ]
+            ]
