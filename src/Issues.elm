@@ -54,8 +54,8 @@ issuesToDict issue dict =
                 Dict.insert version.name (issue :: list) dict
 
 
-view : String -> Model -> Html Msg
-view redmineKey model =
+view : Model -> Html Msg
+view model =
     let
         result =
             case model.loading of

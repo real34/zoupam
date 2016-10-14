@@ -45,8 +45,12 @@ update msg model =
             let
                 ( subConfig, subCmd ) =
                     Configurator.update msg model.config
+
+                ( subProjects, subCmdProjects ) = case Configurator.getRedmineKey subConfig of
+                  "" -> model ! []
+                  redmineKey -> update (UpdateProjects (redmineKey |> Projects.FetchStart)) model
             in
-                { model | config = subConfig } ! [ Cmd.map UpdateConfig subCmd ]
+                { model | config = subConfig , projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
 
         UpdateProjects msg ->
             let
@@ -78,8 +82,8 @@ view model =
         [ h1 [] [ text "Zoupam v3" ]
         , Configurator.view model.config
             |> Html.map UpdateConfig
-        , Projects.view (Configurator.getRedmineKey model.config) model.projects
+        , Projects.view model.projects
             |> Html.map UpdateProjects
-        , Issues.view (Configurator.getRedmineKey model.config) model.issues
+        , Issues.view model.issues
             |> Html.map UpdateIssues
         ]

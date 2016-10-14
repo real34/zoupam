@@ -61,20 +61,17 @@ update msg model =
             { model | loading = False } ! []
 
 
-view : String -> Model -> Html Msg
-view redmineKey model =
+view : Model -> Html Msg
+view model =
     case model.loading of
         False ->
             case model.projects of
                 Nothing ->
-                    div []
-                        [ button [ onClick (FetchStart redmineKey) ] [ text "Récupérer les projets" ]
-                        ]
+                    div [] []
 
                 Just projects ->
                     div []
                         [ select [ onInput ProjectSelect ] (List.map (\( projectId, projectName ) -> option [ projectId |> toString |> value ] [ text projectName ]) projects)
-                        , button [ onClick (FetchStart redmineKey) ] [ text "Récupérer les projets" ]
                         ]
 
         True ->
