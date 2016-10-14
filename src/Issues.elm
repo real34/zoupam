@@ -54,18 +54,9 @@ issuesToDict issue dict =
                 Dict.insert version.name (issue :: list) dict
 
 
-view : String -> Maybe String -> Model -> Html Msg
-view redmineKey projectId model =
+view : String -> Model -> Html Msg
+view redmineKey model =
     let
-        loadButton =
-            case projectId of
-                Nothing ->
-                    span [] []
-
-                Just project ->
-                    button [ onClick (GoIssues redmineKey project) ]
-                        [ text "Récupérer les demandes" ]
-
         result =
             case model.loading of
                 False ->
@@ -84,6 +75,5 @@ view redmineKey projectId model =
                     span [] [ text "CHARGEMENT" ]
     in
         div []
-            [ loadButton
-            , result
+            [ result
             ]

@@ -2,14 +2,9 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.App as Html
-import Html.Events exposing (onClick)
 import Configurator exposing (..)
-import Http
-import RedmineAPI
-import TogglAPI
 import Projects
 import Issues
-
 
 main =
     Html.program
@@ -57,8 +52,12 @@ update msg model =
             let
                 ( subProjects, subCmd ) =
                     Projects.update msg model.projects
+
+                (subIssues, subCmdIssues) = case subProjects.selected of
+                  Nothing -> (model, Cmd.none)
+                  Just selected -> update (UpdateIssues (Issues.GoIssues (Configurator.getRedmineKey model.config) selected)) model
             in
-                { model | projects = subProjects } ! [ Cmd.map UpdateProjects subCmd ]
+                { model | projects = subProjects, issues = subIssues.issues } ! [ Cmd.map UpdateProjects subCmd, subCmdIssues ]
 
         UpdateIssues msg ->
             let
@@ -66,7 +65,6 @@ update msg model =
                     Issues.update msg model.issues
             in
                 { model | issues = subIssues } ! [ Cmd.map UpdateIssues subCmd ]
-
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -82,6 +80,6 @@ view model =
             |> Html.map UpdateConfig
         , Projects.view (Configurator.getRedmineKey model.config) model.projects
             |> Html.map UpdateProjects
-        , Issues.view (Configurator.getRedmineKey model.config) model.projects.selected model.issues
+        , Issues.view (Configurator.getRedmineKey model.config) model.issues
             |> Html.map UpdateIssues
         ]

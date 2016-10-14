@@ -14,7 +14,7 @@ getProjects : String -> (Http.Error -> msg) -> (List ( Int, String ) -> msg) -> 
 getProjects key errorMsg msg =
     let
         url =
-            Http.url (redmineUrl ++ "/projects.json") [ ( "key", key ) ]
+            Http.url (redmineUrl ++ "/projects.json") [ ( "key", key ), ( "limit", "1000" ) ]
     in
         Http.get projectsDecoder url |> Task.perform errorMsg msg
 
@@ -44,7 +44,7 @@ getIssues : String -> String -> (Http.Error -> msg) -> (List Issue -> msg) -> Cm
 getIssues key projectId errorMsg msg =
     let
         url =
-            Http.url (redmineUrl ++ "/issues.json") [ ( "key", key ), ( "project_id", projectId ) ]
+            Http.url (redmineUrl ++ "/issues.json") [ ( "key", key ), ( "project_id", projectId ), ( "limit", "1000" ) ]
     in
         Http.get issuesDecoder url
             |> Task.perform errorMsg msg
