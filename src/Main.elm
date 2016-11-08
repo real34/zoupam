@@ -6,6 +6,7 @@ import Configurator exposing (..)
 import Projects
 import Issues
 
+
 main =
     Html.program
         { init = init
@@ -46,20 +47,34 @@ update msg model =
                 ( subConfig, subCmd ) =
                     Configurator.update msg model.config
 
-                ( subProjects, subCmdProjects ) = case Configurator.getRedmineKey subConfig of
-                  "" -> model ! []
-                  redmineKey -> update (UpdateProjects (redmineKey |> Projects.FetchStart)) model
+                oldRedmineKey =
+                    Configurator.getRedmineKey model.config
+
+                ( subProjects, subCmdProjects ) =
+                    case Configurator.getRedmineKey subConfig of
+                        "" ->
+                            model ! []
+
+                        redmineKey ->
+                            if redmineKey == oldRedmineKey then
+                                model ! []
+                            else
+                                update (UpdateProjects (redmineKey |> Projects.FetchStart)) model
             in
-                { model | config = subConfig , projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
+                { model | config = subConfig, projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
 
         UpdateProjects msg ->
             let
                 ( subProjects, subCmd ) =
                     Projects.update msg model.projects
 
-                (subIssues, subCmdIssues) = case subProjects.selected of
-                  Nothing -> (model, Cmd.none)
-                  Just selected -> update (UpdateIssues (Issues.GoIssues (Configurator.getRedmineKey model.config) selected)) model
+                ( subIssues, subCmdIssues ) =
+                    case subProjects.selected of
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                        Just selected ->
+                            update (UpdateIssues (Issues.GoIssues (Configurator.getRedmineKey model.config) selected)) model
             in
                 { model | projects = subProjects, issues = subIssues.issues } ! [ Cmd.map UpdateProjects subCmd, subCmdIssues ]
 
@@ -69,6 +84,7 @@ update msg model =
                     Issues.update msg model.issues
             in
                 { model | issues = subIssues } ! [ Cmd.map UpdateIssues subCmd ]
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -84,6 +100,6 @@ view model =
             |> Html.map UpdateConfig
         , Projects.view model.projects
             |> Html.map UpdateProjects
-        , Issues.view model.issues
+        , Issues.view model.issues (Configurator.getTogglKey model.config)
             |> Html.map UpdateIssues
         ]
