@@ -2,6 +2,7 @@ module RedmineAPI exposing (..)
 
 import Http
 import Json.Decode as Json exposing ((:=))
+import Json.Decode.Extra exposing ((|:))
 import Task
 
 
@@ -31,6 +32,8 @@ type alias Issue =
     , priority : String
     , doneRatio : Int
     , version : Maybe Version
+    , status : String
+    , estimated : Maybe Int
     }
 
 
@@ -44,7 +47,7 @@ getIssues : String -> String -> (Http.Error -> msg) -> (List Issue -> msg) -> Cm
 getIssues key projectId errorMsg msg =
     let
         url =
-            Http.url (redmineUrl ++ "/issues.json") [ ( "key", key ), ( "project_id", projectId ), ( "limit", "1000" ) ]
+            Http.url (redmineUrl ++ "/issues.json") [ ( "key", key ), ( "project_id", projectId ), ( "status_id", "*" ), ( "limit", "1000" ) ]
     in
         Http.get issuesDecoder url
             |> Task.perform errorMsg msg
@@ -54,12 +57,14 @@ issuesDecoder : Json.Decoder (List Issue)
 issuesDecoder =
     ("issues"
         := Json.list
-            (Json.object6 Issue
-                ("id" := Json.int)
-                ("description" := Json.string)
-                ("subject" := Json.string)
-                ("priority" := ("name" := Json.string))
-                ("done_ratio" := Json.int)
-                (Json.maybe ("fixed_version" := (Json.object2 Version ("id" := Json.int) ("name" := Json.string))))
+            (Json.succeed Issue
+                |: ("id" := Json.int)
+                |: ("description" := Json.string)
+                |: ("subject" := Json.string)
+                |: ("priority" := ("name" := Json.string))
+                |: ("done_ratio" := Json.int)
+                |: (Json.maybe ("fixed_version" := (Json.object2 Version ("id" := Json.int) ("name" := Json.string))))
+                |: ("status" := ("name" := Json.string))
+                |: (Json.maybe ("estimated_hours" := Json.int))
             )
     )
