@@ -2,21 +2,33 @@ module Issues exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick)
+import Html.Attributes exposing (href, target)
 import Http
 import Dict exposing (Dict)
 import RedmineAPI
+import TogglAPI
+import String
+
+
+type alias ZoupamTask =
+    { issue : Maybe (RedmineAPI.Issue)
+    , timeEntries : Maybe (List TogglAPI.TimeEntry)
+    }
 
 
 type alias Model =
-    { issues : Dict String (List RedmineAPI.Issue)
+    { issues : Dict String (List ZoupamTask)
     , loading : Bool
     }
 
 
 type Msg
     = GoIssues String String
-    | Fail Http.Error
-    | Success (List RedmineAPI.Issue)
+    | FetchIssuesFail Http.Error
+    | FetchIssuesSuccess (List RedmineAPI.Issue)
+    | Zou String String
+    | FetchTogglFail Http.Error
+    | FetchTogglSuccess String (List TogglAPI.TimeEntry)
 
 
 init : Model
@@ -28,16 +40,47 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GoIssues redmineKey projectId ->
-            { model | loading = True } ! [ RedmineAPI.getIssues redmineKey projectId Fail Success ]
+            { model | loading = True } ! [ RedmineAPI.getIssues redmineKey projectId FetchIssuesFail FetchIssuesSuccess ]
 
-        Success issues ->
+        FetchIssuesSuccess issues ->
             { model | loading = False, issues = List.foldr issuesToDict Dict.empty issues } ! []
 
-        Fail error ->
+        FetchIssuesFail error ->
             { model | loading = False } ! []
 
+        Zou togglKey version ->
+            model ! [ TogglAPI.getDetails togglKey FetchTogglFail (FetchTogglSuccess version) ]
 
-issuesToDict : RedmineAPI.Issue -> Dict String (List RedmineAPI.Issue) -> Dict String (List RedmineAPI.Issue)
+        FetchTogglFail error ->
+            let
+                pouet =
+                    error |> Debug.log "error"
+            in
+                model ! []
+
+        FetchTogglSuccess version toggl ->
+            let
+                zoupamTasks =
+                    List.map (includeTimeEntries toggl) (Maybe.withDefault [] (Dict.get version model.issues))
+            in
+                { model | issues = Dict.insert version zoupamTasks model.issues } ! []
+
+
+includeTimeEntries : List TogglAPI.TimeEntry -> ZoupamTask -> ZoupamTask
+includeTimeEntries toggl task =
+    let
+        entries =
+            case task.issue of
+                Nothing ->
+                    Nothing
+
+                Just issue ->
+                    Just (List.filter (\entry -> String.contains (toString issue.id) entry.description) toggl)
+    in
+        { task | timeEntries = entries }
+
+
+issuesToDict : RedmineAPI.Issue -> Dict String (List ZoupamTask) -> Dict String (List ZoupamTask)
 issuesToDict issue dict =
     let
         version =
@@ -48,25 +91,22 @@ issuesToDict issue dict =
     in
         case existing of
             Nothing ->
-                Dict.insert version.name [ issue ] dict
+                Dict.insert version.name [ ZoupamTask (Just issue) Nothing ] dict
 
             Just list ->
-                Dict.insert version.name (issue :: list) dict
+                Dict.insert version.name ((ZoupamTask (Just issue) Nothing) :: list) dict
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> String -> Html Msg
+view model togglKey =
     let
         result =
             case model.loading of
                 False ->
                     div []
                         (List.map
-                            (\( key, issues ) ->
-                                div []
-                                    [ h2 [] [ text key ]
-                                    , div [] (List.map (\issue -> h4 [] [ text issue.subject ]) issues)
-                                    ]
+                            (\( version, issues ) ->
+                                iterationTableView issues version togglKey
                             )
                             (Dict.toList model.issues)
                         )
@@ -74,6 +114,86 @@ view model =
                 True ->
                     span [] [ text "CHARGEMENT" ]
     in
-        div []
-            [ result
+        result
+
+
+iterationTableView : List ZoupamTask -> String -> String -> Html Msg
+iterationTableView tasks version togglKey =
+    div []
+        [ h2 [] [ text version ]
+        , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
+        , table []
+            [ tableHeader
+            , (tableBody tasks)
+            ]
+        ]
+
+
+tableHeader : Html Msg
+tableHeader =
+    thead []
+        [ th [] [ text "#Id" ]
+        , th [] [ text "Description" ]
+        , th [] [ text "Estimé" ]
+        , th [] [ text "% Réalisé" ]
+        , th [] [ text "État" ]
+        , th [] [ text "Temps consommé" ]
+        , th [] [ text "Temps facturable" ]
+        , th [] [ text "% temps" ]
+        , th [] [ text "Capital" ]
+        ]
+
+
+tableBody : List ZoupamTask -> Html Msg
+tableBody tasks =
+    tbody []
+        (List.filterMap
+            (\task ->
+                let
+                    result =
+                        case task.issue of
+                            Nothing ->
+                                Nothing
+
+                            Just issue ->
+                                Just (taskLine issue task.timeEntries)
+                in
+                    result
+            )
+            tasks
+        )
+
+
+taskLine : RedmineAPI.Issue -> Maybe (List TogglAPI.TimeEntry) -> Html Msg
+taskLine issue timeEntries =
+    let
+        issueId =
+            "#" ++ (toString issue.id)
+
+        estimated =
+            case issue.estimated of
+                Nothing ->
+                    0
+
+                Just hour ->
+                    hour
+
+        used =
+            case timeEntries of
+                Nothing ->
+                    "TBD"
+
+                Just entries ->
+                    toString (List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries)
+    in
+        tr []
+            [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
+            , td [] [ text issue.subject ]
+            , td [] [ text (toString estimated) ]
+            , td [] [ text (toString issue.doneRatio) ]
+            , td [] [ text issue.status ]
+            , td [] [ text used ]
+            , td [] [ text "TODO" ]
+            , td [] [ text "TODO" ]
+            , td [] [ text "TODO" ]
             ]
