@@ -1,4 +1,4 @@
-port module Configurator exposing (Config, update, view, init, subscriptions, Msg, getRedmineKey)
+port module Configurator exposing (Config, update, view, init, subscriptions, Msg, getRedmineKey, getTogglKey)
 
 import Html exposing (..)
 import Views.ConfigInput as ConfigInput
@@ -47,6 +47,10 @@ getRedmineKey config =
     Dict.get redmineKey config
         |> Maybe.withDefault ""
 
+getTogglKey : Config -> String
+getTogglKey config =
+    Dict.get togglKey config
+        |> Maybe.withDefault ""
 
 type Msg
     = UpdateConfig String String
