@@ -14,6 +14,9 @@ type alias TimeEntry =
     , duration : Int
     }
 
+durationInMinutes : Int -> Float
+durationInMinutes duration =
+  toFloat duration / 60 / 60 / 1000
 
 baseUrl : String
 baseUrl =

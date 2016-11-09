@@ -60,25 +60,31 @@ update msg model =
 
         FetchTogglSuccess version toggl ->
             let
+                issues = (Maybe.withDefault [] (Dict.get version model.issues))
+                  |> List.filterMap (\task -> case task.issue of
+                    Nothing -> Nothing
+                    Just issue -> Just issue)
+
                 zoupamTasks =
-                    List.map (includeTimeEntries toggl) (Maybe.withDefault [] (Dict.get version model.issues))
+                    List.map (includeTimeEntries toggl) issues
+                    ++ [ ZoupamTask Nothing (Just (List.filter (\entry -> List.foldr
+                      (\issue acc -> acc && not (isReferencing issue entry))
+                      True
+                      issues
+                    ) toggl)) ]
             in
                 { model | issues = Dict.insert version zoupamTasks model.issues } ! []
 
+isReferencing : RedmineAPI.Issue -> TogglAPI.TimeEntry -> Bool
+isReferencing issue entry =
+    String.contains (toString issue.id) entry.description
 
-includeTimeEntries : List TogglAPI.TimeEntry -> ZoupamTask -> ZoupamTask
-includeTimeEntries toggl task =
+includeTimeEntries : List TogglAPI.TimeEntry -> RedmineAPI.Issue -> ZoupamTask
+includeTimeEntries toggl issue =
     let
-        entries =
-            case task.issue of
-                Nothing ->
-                    Nothing
-
-                Just issue ->
-                    Just (List.filter (\entry -> String.contains (toString issue.id) entry.description) toggl)
+        entries = Just (List.filter (isReferencing issue) toggl)
     in
-        { task | timeEntries = entries }
-
+        ZoupamTask (Just issue) entries
 
 issuesToDict : RedmineAPI.Issue -> Dict String (List ZoupamTask) -> Dict String (List ZoupamTask)
 issuesToDict issue dict =
@@ -153,7 +159,7 @@ tableBody tasks =
                     result =
                         case task.issue of
                             Nothing ->
-                                Nothing
+                                Just (unknownTaskLine task.timeEntries)
 
                             Just issue ->
                                 Just (taskLine issue task.timeEntries)
@@ -162,6 +168,27 @@ tableBody tasks =
             )
             tasks
         )
+
+unknownTaskLine : Maybe (List TogglAPI.TimeEntry) -> Html Msg
+unknownTaskLine timeEntries =
+    let
+        entries = case timeEntries of
+          Nothing -> []
+          Just entries -> entries
+
+        used = toString (List.foldr (\timeEntry acc -> acc + (TogglAPI.durationInMinutes timeEntry.duration)) 0 entries)
+    in
+        tr []
+            [ td [] [ text "Le reste" ]
+            , td [] [ ul [] (List.map (\entry -> li [] [ text ((toString (TogglAPI.durationInMinutes entry.duration)) ++ " - " ++ entry.description) ]) entries) ]
+            , td [] [ ]
+            , td [] [ ]
+            , td [] [ ]
+            , td [] [ text used ]
+            , td [] [ text "TODO" ]
+            , td [] [ text "TODO" ]
+            , td [] [ text "TODO" ]
+            ]
 
 
 taskLine : RedmineAPI.Issue -> Maybe (List TogglAPI.TimeEntry) -> Html Msg
