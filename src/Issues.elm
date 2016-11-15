@@ -5,28 +5,33 @@ import Html.Events exposing (onClick)
 import Html.Attributes exposing (href, target)
 import Http
 import Dict exposing (Dict)
-import RedmineAPI
-import TogglAPI
+import RedmineAPI exposing (Issue)
+import TogglAPI exposing (TimeEntry)
 import String
+import Views.Versions
 
 
 type alias ZoupamTask =
     { issue : Maybe RedmineAPI.Issue
-    , timeEntries : Maybe (List TogglAPI.TimeEntry)
+    , timeEntries : Maybe (List TimeEntry)
     }
 
 
+type alias Versions =
+    Dict String (List ZoupamTask)
+
+
 type alias Model =
-    { issues : Dict String (List ZoupamTask)
+    { versions : Versions
     , loading : Bool
     }
 
 
 type Msg
     = GoIssues String String
-    | FetchIssuesEnd (Result Http.Error (List RedmineAPI.Issue))
+    | FetchIssuesEnd (Result Http.Error (List Issue))
     | Zou String String
-    | FetchTogglEnd String (Result Http.Error (List TogglAPI.TimeEntry))
+    | FetchTogglEnd String (Result Http.Error (List TimeEntry))
 
 
 init : Model
@@ -41,10 +46,14 @@ update msg model =
             { model | loading = True } ! [ RedmineAPI.getIssues redmineKey projectId FetchIssuesEnd ]
 
         FetchIssuesEnd (Ok issues) ->
-            { model | loading = False, issues = List.foldr issuesToDict Dict.empty issues } ! []
+            { model | loading = False, versions = List.foldr issuesToVersions Dict.empty issues } ! []
 
         FetchIssuesEnd (Err error) ->
-            { model | loading = False } ! []
+            let
+                pouet =
+                    error |> Debug.log "error"
+            in
+                { model | loading = False } ! []
 
         Zou togglKey version ->
             model ! [ TogglAPI.getDetails togglKey (FetchTogglEnd version) ]
@@ -59,42 +68,47 @@ update msg model =
         FetchTogglEnd version (Ok toggl) ->
             let
                 issues =
-                    (Maybe.withDefault [] (Dict.get version model.issues))
-                        |> List.filterMap
-                            (\task ->
-                                case task.issue of
-                                    Nothing ->
-                                        Nothing
-
-                                    Just issue ->
-                                        Just issue
-                            )
+                    (Maybe.withDefault [] (Dict.get version model.versions))
+                        |> List.filterMap issueIfExists
 
                 zoupamTasks =
                     List.map (includeTimeEntries toggl) issues
-                        ++ [ ZoupamTask Nothing
-                                (Just
-                                    (List.filter
-                                        (\entry ->
-                                            List.foldr
-                                                (\issue acc -> acc && not (isReferencing issue entry))
-                                                True
-                                                issues
-                                        )
-                                        toggl
-                                    )
-                                )
-                           ]
+                        ++ [ ZoupamTask Nothing (notBindedTimeEntries toggl issues) ]
             in
-                { model | issues = Dict.insert version zoupamTasks model.issues } ! []
+                { model | versions = Dict.insert version zoupamTasks model.versions } ! []
 
 
-isReferencing : RedmineAPI.Issue -> TogglAPI.TimeEntry -> Bool
+notBindedTimeEntries : List TimeEntry -> List Issue -> Maybe (List TimeEntry)
+notBindedTimeEntries timeEntries issues =
+    (Just
+        (List.filter
+            (\entry ->
+                List.foldr
+                    (\issue acc -> acc && not (isReferencing issue entry))
+                    True
+                    issues
+            )
+            timeEntries
+        )
+    )
+
+
+issueIfExists : ZoupamTask -> Maybe Issue
+issueIfExists task =
+    case task.issue of
+        Nothing ->
+            Nothing
+
+        Just issue ->
+            Just issue
+
+
+isReferencing : Issue -> TimeEntry -> Bool
 isReferencing issue entry =
     String.contains (toString issue.id) entry.description
 
 
-includeTimeEntries : List TogglAPI.TimeEntry -> RedmineAPI.Issue -> ZoupamTask
+includeTimeEntries : List TimeEntry -> Issue -> ZoupamTask
 includeTimeEntries toggl issue =
     let
         entries =
@@ -103,8 +117,8 @@ includeTimeEntries toggl issue =
         ZoupamTask (Just issue) entries
 
 
-issuesToDict : RedmineAPI.Issue -> Dict String (List ZoupamTask) -> Dict String (List ZoupamTask)
-issuesToDict issue dict =
+issuesToVersions : Issue -> Versions -> Versions
+issuesToVersions issue dict =
     let
         version =
             Maybe.withDefault { id = 0, name = "Version non renseignée" } issue.version
@@ -131,7 +145,7 @@ view model togglKey =
                             (\( version, issues ) ->
                                 iterationTableView issues version togglKey
                             )
-                            (Dict.toList model.issues)
+                            (Dict.toList model.versions)
                         )
 
                 True ->
@@ -146,24 +160,9 @@ iterationTableView tasks version togglKey =
         [ h2 [] [ text version ]
         , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
         , table []
-            [ tableHeader
+            [ Views.Versions.tableHeader
             , (tableBody tasks)
             ]
-        ]
-
-
-tableHeader : Html Msg
-tableHeader =
-    thead []
-        [ th [] [ text "#Id" ]
-        , th [] [ text "Description" ]
-        , th [] [ text "Estimé" ]
-        , th [] [ text "% Réalisé" ]
-        , th [] [ text "État" ]
-        , th [] [ text "Temps consommé" ]
-        , th [] [ text "Temps facturable" ]
-        , th [] [ text "% temps" ]
-        , th [] [ text "Capital" ]
         ]
 
 
@@ -176,74 +175,12 @@ tableBody tasks =
                     result =
                         case task.issue of
                             Nothing ->
-                                Just (unknownTaskLine task.timeEntries)
+                                Just (Views.Versions.unknownTaskLine task.timeEntries)
 
                             Just issue ->
-                                Just (taskLine issue task.timeEntries)
+                                Just (Views.Versions.taskLine issue task.timeEntries)
                 in
                     result
             )
             tasks
         )
-
-
-unknownTaskLine : Maybe (List TogglAPI.TimeEntry) -> Html Msg
-unknownTaskLine timeEntries =
-    let
-        entries =
-            case timeEntries of
-                Nothing ->
-                    []
-
-                Just entries ->
-                    entries
-
-        used =
-            toString (List.foldr (\timeEntry acc -> acc + (TogglAPI.durationInMinutes timeEntry.duration)) 0 entries)
-    in
-        tr []
-            [ td [] [ text "Le reste" ]
-            , td [] [ ul [] (List.map (\entry -> li [] [ text ((toString (TogglAPI.durationInMinutes entry.duration)) ++ " - " ++ entry.description) ]) entries) ]
-            , td [] []
-            , td [] []
-            , td [] []
-            , td [] [ text used ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            ]
-
-
-taskLine : RedmineAPI.Issue -> Maybe (List TogglAPI.TimeEntry) -> Html Msg
-taskLine issue timeEntries =
-    let
-        issueId =
-            "#" ++ (toString issue.id)
-
-        estimated =
-            case issue.estimated of
-                Nothing ->
-                    0
-
-                Just hour ->
-                    hour
-
-        used =
-            case timeEntries of
-                Nothing ->
-                    "TBD"
-
-                Just entries ->
-                    toString (List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries)
-    in
-        tr []
-            [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
-            , td [] [ text issue.subject ]
-            , td [] [ text (toString estimated) ]
-            , td [] [ text (toString issue.doneRatio) ]
-            , td [] [ text issue.status ]
-            , td [] [ text used ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            ]

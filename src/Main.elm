@@ -58,7 +58,12 @@ update msg model =
                             if redmineKey == oldRedmineKey then
                                 model ! []
                             else
-                                update (UpdateProjects (redmineKey |> Projects.FetchStart)) model
+                                update
+                                    (redmineKey
+                                        |> Projects.FetchStart
+                                        |> UpdateProjects
+                                    )
+                                    model
             in
                 { model | config = subConfig, projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
 
@@ -73,7 +78,12 @@ update msg model =
                             ( model, Cmd.none )
 
                         Just selected ->
-                            update (UpdateIssues (Issues.GoIssues (Configurator.getRedmineKey model.config) selected)) model
+                            update
+                                (selected
+                                    |> Issues.GoIssues (Configurator.getRedmineKey model.config)
+                                    |> UpdateIssues
+                                )
+                                model
             in
                 { model | projects = subProjects, issues = subIssues.issues } ! [ Cmd.map UpdateProjects subCmd, subCmdIssues ]
 

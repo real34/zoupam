@@ -63,7 +63,10 @@ buildContextParams context =
 
 buildIdsListParam : Maybe (List Int) -> String
 buildIdsListParam ids =
-    (Maybe.withDefault [] ids) |> List.map toString |> List.intersperse "," |> String.concat
+    (Maybe.withDefault [] ids)
+        |> List.map toString
+        |> List.intersperse ","
+        |> String.concat
 
 
 buildRequestParams : RequestParameters -> String
@@ -96,8 +99,22 @@ getDetails key msg =
 
         request =
             { method = "GET"
-            , headers = [ Http.header "Authorization" ("Basic " ++ (Result.withDefault "" (Base64.encode (key ++ ":api_token")))) ]
-            , url = baseUrl ++ "/details?" ++ buildContextParams context ++ "&" ++ buildRequestParams params
+            , headers =
+                [ Http.header
+                    "Authorization"
+                    (key
+                        ++ ":api_token"
+                        |> Base64.encode
+                        |> Result.withDefault ""
+                        |> String.append "Basic "
+                    )
+                ]
+            , url =
+                baseUrl
+                    ++ "/details?"
+                    ++ buildContextParams context
+                    ++ "&"
+                    ++ buildRequestParams params
             , body = Http.emptyBody
             , expect = Http.expectJson detailsDecoder
             , timeout = Nothing
@@ -109,13 +126,10 @@ getDetails key msg =
 
 detailsDecoder : Json.Decoder (List TimeEntry)
 detailsDecoder =
-    (field "data"
-        (Json.list
-            (Json.succeed TimeEntry
-                |: (field "id" Json.int)
-                |: (field "description" Json.string)
-                |: (field "is_billable" Json.bool)
-                |: (field "dur" Json.int)
-            )
-        )
-    )
+    Json.succeed TimeEntry
+        |: (field "id" Json.int)
+        |: (field "description" Json.string)
+        |: (field "is_billable" Json.bool)
+        |: (field "dur" Json.int)
+        |> Json.list
+        |> field "data"
