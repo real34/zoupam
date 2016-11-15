@@ -18,8 +18,7 @@ type alias Model =
 type Msg
     = ProjectSelect String
     | FetchStart String
-    | FetchSuccess (List ( Int, String ))
-    | FetchFail Http.Error
+    | FetchEnd (Result Http.Error (List ( Int, String )))
 
 
 init : Model
@@ -44,7 +43,7 @@ update msg model =
                 projects =
                     model.projects
             in
-                { model | loading = True } ! [ RedmineAPI.getProjects redmineKey FetchFail FetchSuccess ]
+                { model | loading = True } ! [ RedmineAPI.getProjects redmineKey FetchEnd ]
 
         ProjectSelect projectId ->
             case projectId of
@@ -54,10 +53,10 @@ update msg model =
                 _ ->
                     { model | selected = Just projectId } ! []
 
-        FetchSuccess fetchedProjects ->
+        FetchEnd (Ok fetchedProjects) ->
             { model | loading = False, projects = Just (emptyProject :: fetchedProjects) } ! []
 
-        FetchFail error ->
+        FetchEnd (Err _) ->
             { model | loading = False } ! []
 
 

@@ -1,9 +1,8 @@
 module RedmineAPI exposing (..)
 
 import Http
-import Json.Decode as Json exposing ((:=))
+import Json.Decode as Json exposing (field)
 import Json.Decode.Extra exposing ((|:))
-import Task
 
 
 redmineUrl : String
@@ -11,18 +10,18 @@ redmineUrl =
     "http://projets.occitech.fr"
 
 
-getProjects : String -> (Http.Error -> msg) -> (List ( Int, String ) -> msg) -> Cmd msg
-getProjects key errorMsg msg =
+getProjects : String -> (Result Http.Error (List ( Int, String )) -> msg) -> Cmd msg
+getProjects key msg =
     let
         url =
-            Http.url (redmineUrl ++ "/projects.json") [ ( "key", key ), ( "limit", "1000" ) ]
+            redmineUrl ++ "/projects.json?key=" ++ key ++ "&limit=1000"
     in
-        Http.get projectsDecoder url |> Task.perform errorMsg msg
+        Http.send msg <| Http.get url projectsDecoder
 
 
 projectsDecoder : Json.Decoder (List ( Int, String ))
 projectsDecoder =
-    ("projects" := Json.list (Json.object2 (,) ("id" := Json.int) ("name" := Json.string)))
+    (field "projects" (Json.list (Json.map2 (,) (field "id" Json.int) (field "name" Json.string))))
 
 
 type alias Issue =
@@ -43,28 +42,29 @@ type alias Version =
     }
 
 
-getIssues : String -> String -> (Http.Error -> msg) -> (List Issue -> msg) -> Cmd msg
-getIssues key projectId errorMsg msg =
+getIssues : String -> String -> (Result Http.Error (List Issue) -> msg) -> Cmd msg
+getIssues key projectId msg =
     let
         url =
-            Http.url (redmineUrl ++ "/issues.json") [ ( "key", key ), ( "project_id", projectId ), ( "status_id", "*" ), ( "limit", "1000" ) ]
+            redmineUrl ++ "/issues.json?key=" ++ key ++ "&project_id=" ++ projectId ++ "&status_id=*&limit=1000"
     in
-        Http.get issuesDecoder url
-            |> Task.perform errorMsg msg
+        Http.send msg <| Http.get url issuesDecoder
 
 
 issuesDecoder : Json.Decoder (List Issue)
 issuesDecoder =
-    ("issues"
-        := Json.list
+    (field
+        "issues"
+        (Json.list
             (Json.succeed Issue
-                |: ("id" := Json.int)
-                |: ("description" := Json.string)
-                |: ("subject" := Json.string)
-                |: ("priority" := ("name" := Json.string))
-                |: ("done_ratio" := Json.int)
-                |: (Json.maybe ("fixed_version" := (Json.object2 Version ("id" := Json.int) ("name" := Json.string))))
-                |: ("status" := ("name" := Json.string))
-                |: (Json.maybe ("estimated_hours" := Json.int))
+                |: (field "id" Json.int)
+                |: (field "description" Json.string)
+                |: (field "subject" Json.string)
+                |: (field "priority" (field "name" Json.string))
+                |: (field "done_ratio" Json.int)
+                |: (Json.maybe (field "fixed_version" (Json.map2 Version (field "id" Json.int) (field "name" Json.string))))
+                |: (field "status" (field "name" Json.string))
+                |: (Json.maybe (field "estimated_hours" Json.int))
             )
+        )
     )

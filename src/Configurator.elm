@@ -47,10 +47,12 @@ getRedmineKey config =
     Dict.get redmineKey config
         |> Maybe.withDefault ""
 
+
 getTogglKey : Config -> String
 getTogglKey config =
     Dict.get togglKey config
         |> Maybe.withDefault ""
+
 
 type Msg
     = UpdateConfig String String
