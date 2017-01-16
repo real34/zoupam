@@ -1,6 +1,6 @@
 #!groovy
 
-node('node') {
+node('master') {
 
     currentBuild.result = "SUCCESS"
 
@@ -8,7 +8,7 @@ node('node') {
 
        stage 'Checkout'
 
-            echo 'Fetching the latest version'            
+            echo 'Fetching the latest version'
             checkout scm
 
        stage 'Test'
@@ -32,7 +32,7 @@ node('node') {
             // The env variable with target must be set. Example: DEPLOYMENT_TARGET_PATH=target@server.tld:path/to/dest
             sh 'make deploy_prod'
         // } else {
-        //     echo 'Not deploying this build'            
+        //     echo 'Not deploying this build'
         // }
 
        stage 'Cleanup'
