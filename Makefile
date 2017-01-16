@@ -1,5 +1,5 @@
 install: ## Install web NPM dependencies
-	docker-compose run --rm elm package install -y
+	docker-compose run --rm elm install
 
 docker_run: ## Launch docker instances for development
 	docker-compose up -d elm
