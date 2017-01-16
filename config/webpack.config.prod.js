@@ -19,8 +19,7 @@ module.exports = {
     // The build folder.
     path: paths.dist,
 
-    // Append leading slash when production assets are referenced in the html.
-    publicPath: '/',
+    publicPath: '',
 
     // Generated JS files.
     filename: 'js/[name].[chunkhash:8].js'
