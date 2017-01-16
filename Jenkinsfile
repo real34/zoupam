@@ -45,9 +45,7 @@ node('master') {
        stage 'Cleanup'
 
             echo 'Cleaning things up'
-            // echo 'prune and cleanup'
-            // sh 'npm prune'
-            sh 'rm -rf node_modules elm-stuff'
+            sh 'docker-compose run --rm --entrypoint rm elm -rf elm-stuff node_modules'
 
             // mail body: 'project build successful',
             //             from: 'xxxx@yyyyy.com',
