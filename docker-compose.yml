@@ -2,7 +2,7 @@ elm:
   build: .
   volumes:
     - .:/project
-  entrypoint: elm-app
+  entrypoint: npm
   command: start
   working_dir: /project
   ports:

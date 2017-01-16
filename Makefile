@@ -14,7 +14,7 @@ test: ## Launch tests
 	@echo "TODO !"
 
 build: ## Compile js
-	docker-compose run --rm elm build
+	docker-compose run --rm elm run build
 
 lint: ## Make a lint pass
 	# docker-compose run --rm npm run lint
