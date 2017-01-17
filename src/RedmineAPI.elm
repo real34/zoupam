@@ -29,7 +29,7 @@ type alias Projects =
 
 redmineUrl : String
 redmineUrl =
-    "https://projets.occitech.fr"
+    "//projets.occitech.fr"
 
 
 getProjects : String -> (Result Http.Error Projects -> msg) -> Cmd msg
