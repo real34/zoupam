@@ -34,11 +34,16 @@ node('master') {
                 echo 'Not deploying this build because it failed'
             }
 
+       stage 'Validation'
+
+            if (currentBuild.result == 'SUCCESS' && BRANCH_NAME!='master') {
+                input message: 'Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/${BRANCH_NAME} ?', ok: 'Je valide !'
+            }
+
        stage 'Cleanup'
 
             echo 'Cleaning things up'
             sh 'docker-compose run --rm --entrypoint rm elm -rf elm-stuff node_modules'
-
             // mail body: 'project build successful',
             //             from: 'xxxx@yyyyy.com',
             //             replyTo: 'xxxx@yyyy.com',
