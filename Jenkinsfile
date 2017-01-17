@@ -32,7 +32,6 @@ stage('Deploy') {
 }
 
 stage('Validation') {
-    echo 'BRANCHE ${BRANCH_NAME}'
     if (BRANCH_NAME=='master') {
         echo 'Rien à faire, cela a été validé sur la branche ...'
     } else {
@@ -45,7 +44,16 @@ stage('Validation') {
 stage('Cleanup') {
     node {
         echo 'Cleaning things up'
-        sh 'docker-compose run --rm --entrypoint rm elm -rf elm-stuff node_modules'
+        sh 'docker-compose run --rm --entrypoint rm elm -rf elm-stuff node_modules dist/*'
+        if (BRANCH_NAME!='master') {
+            withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
+                echo 'Empty remote staging directory'
+                // TODO Find a way to remove the empty directory.
+                // I had issues doing it with the user@host:base/path DEPLOYMENT_TARGET_PATH_BASE value,
+                // maybe splitting it in two variables (hostname and base path) is the only solution...
+                sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/${BRANCH_NAME}'
+            }
+        }
         // mail body: 'project build successful',
         //             from: 'xxxx@yyyyy.com',
         //             replyTo: 'xxxx@yyyy.com',
