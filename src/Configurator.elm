@@ -83,10 +83,10 @@ view : Config -> Html Msg
 view config =
     div []
         [ getRedmineKey config
-            |> ConfigInput.Field redmineKey "Redmine"
+            |> ConfigInput.Field redmineKey "Insérez votre clé API Redmine: "
             |> ConfigInput.view (UpdateConfig redmineKey)
         , Dict.get togglKey config
             |> Maybe.withDefault ""
-            |> ConfigInput.Field togglKey "Toggl"
+            |> ConfigInput.Field togglKey "Insérez votre clé API Toggl: "
             |> ConfigInput.view (UpdateConfig togglKey)
         ]

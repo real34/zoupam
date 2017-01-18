@@ -111,4 +111,7 @@ view model =
             |> Html.map UpdateProjects
         , Issues.view model.issues (Configurator.getTogglKey model.config)
             |> Html.map UpdateIssues
+        , h2 [] [text "Où trouver vos clé API ?"]
+        , div [] [text "Votre clé Redmine est accessible depuis ce lien: http://projets.occitech.fr/my/account pour obtenir votré clé il suffit de cliquer sur 'Afficher' en dessous de 'Clé d'accès API' "]
+        , div [] [text "Votre clé Toggl est accessible depuis ce lien: https://toggl.com/app/profile"]
         ]
