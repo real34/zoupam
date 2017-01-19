@@ -1,6 +1,7 @@
 port module Configurator exposing (Config, update, view, init, subscriptions, Msg, getRedmineKey, getTogglKey)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Views.ConfigInput as ConfigInput
 import Dict exposing (Dict)
 
@@ -78,15 +79,23 @@ subscriptions : Sub Msg
 subscriptions =
     getStoredConfig StoredKeys
 
+helpRedmineAPI : Html msg
+helpRedmineAPI = i [] [text "Votre clé Redmine est accessible depuis "
+       , a [href "http://projets.occitech.fr/my/account"][text "ce lien"]
+       , text " pour obtenir votré clé il suffit de cliquer sur 'Afficher' en dessous de 'Clé d'accès API' "]
+
+helpTogglAPI : Html msg
+helpTogglAPI = i [] [text "Votre clé Toggl est accessible depuis "
+       , a [href "https://toggl.com/app/profile"][text "ce lien"]]
 
 view : Config -> Html Msg
 view config =
     div []
         [ getRedmineKey config
             |> ConfigInput.Field redmineKey "Insérez votre clé API Redmine: "
-            |> ConfigInput.view (UpdateConfig redmineKey)
+            |> ConfigInput.view (UpdateConfig redmineKey) (helpRedmineAPI)
         , Dict.get togglKey config
             |> Maybe.withDefault ""
             |> ConfigInput.Field togglKey "Insérez votre clé API Toggl: "
-            |> ConfigInput.view (UpdateConfig togglKey)
+            |> ConfigInput.view (UpdateConfig togglKey) (helpTogglAPI)
         ]
