@@ -80,12 +80,12 @@ subscriptions =
     getStoredConfig StoredKeys
 
 helpRedmineAPI : Html msg
-helpRedmineAPI = p [class "br"] [text "Votre clé API Redmine est accessible depuis "
+helpRedmineAPI = p [] [text "Votre clé API Redmine est accessible depuis "
        , a [href "http://projets.occitech.fr/my/account"][text "ce lien"]
        , text ", pour obtenir votre clé il suffit de cliquer sur 'Afficher' en dessous de 'Clé d'accès API' (qui se situe à droite de l'écran)."]
 
 helpTogglAPI : Html msg
-helpTogglAPI = p [class "br"] [text "Votre clé Toggl est accessible depuis "
+helpTogglAPI = p [] [text "Votre clé Toggl est accessible depuis "
        , a [href "https://toggl.com/app/profile"][text "ce lien"]]
 
 view : Config -> Html Msg
