@@ -100,7 +100,6 @@ subscriptions model =
     Configurator.subscriptions
         |> Sub.map UpdateConfig
 
-
 view : Model -> Html Msg
 view model =
     div []

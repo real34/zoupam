@@ -11,10 +11,10 @@ type alias Field =
     , value : String
     }
 
-
-view : (String -> msg) -> Field -> Html msg
-view msg field =
+view : (String -> msg) -> Html msg -> Field -> Html msg
+view msg helpAPI field =
     div []
         [ label [ for field.id ] [ text field.label ]
         , input [ id field.id, onInput msg, value field.value ] []
+        , helpAPI
         ]
