@@ -4,7 +4,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import TogglAPI exposing (TimeEntry)
 import RedmineAPI exposing (Issue)
-
+import Round
+import Debug
 
 tableHeader : Html msg
 tableHeader =
@@ -16,7 +17,7 @@ tableHeader =
         , th [] [ text "État" ]
         , th [] [ text "Temps consommé" ]
         , th [] [ text "Temps facturable" ]
-        , th [] [ text "% temps" ]
+        , th [] [ text "Temps restant" ]
         , th [] [ text "Capital" ]
         ]
 
@@ -77,19 +78,52 @@ taskLine issue timeEntries =
         used =
             case timeEntries of
                 Nothing ->
-                    "TBD"
+                    0
 
                 Just entries ->
-                    toString (List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries)
+                    List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries
+
+        billableTime =
+            case timeEntries of
+                Nothing ->
+                    0
+
+                Just entries ->
+                    List.foldr billableAccumulator 0 entries
+
     in
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
-            , td [] [ text issue.subject ]
-            , td [] [ text (toString estimated) ]
-            , td [] [ text (toString issue.doneRatio) ]
+            , td [] [ issue.subject |> toString |> text]
+            , td [] [ estimated |> toString |> text ]
+            , td [] [ issue.doneRatio |> Debug.log "ratio" |> toString |> text]
             , td [] [ text issue.status ]
-            , td [] [ text used ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
+            , td [] [ used |> convertIntoDay |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ text (roundedAtTwoDigitAfterComma (timeLeftCalculator estimated billableTime)) ]
+            , td [] [ text (toString (capitalCalculator estimated issue.doneRatio billableTime)) ]
             ]
+
+billableAccumulator : TimeEntry -> Float -> Float
+billableAccumulator timeEntry acc =
+    case timeEntry.isBillable of
+        False ->
+            acc + 0
+        True ->
+            acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000) |> convertIntoDay
+
+timeLeftCalculator : Float -> Float -> Float
+timeLeftCalculator estimated billableTime =
+    estimated - billableTime |> convertIntoDay
+
+convertIntoDay : Float -> Float
+convertIntoDay decTime =
+    decTime / 6
+
+roundedAtTwoDigitAfterComma : Float -> String
+roundedAtTwoDigitAfterComma =
+    Round.round 2
+
+capitalCalculator : Float -> Int -> Float -> Float
+capitalCalculator estimated realisated billableTime =
+    estimated - ((100 * (billableTime)) / toFloat (realisated))
