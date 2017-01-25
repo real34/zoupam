@@ -5,7 +5,6 @@ import Html.Attributes exposing (..)
 import TogglAPI exposing (TimeEntry)
 import RedmineAPI exposing (Issue)
 import Round
-import Debug
 
 tableHeader : Html msg
 tableHeader =
@@ -81,7 +80,7 @@ taskLine issue timeEntries =
                     0
 
                 Just entries ->
-                    List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries
+                    List.foldr (\timeEntry acc -> acc + toFloat timeEntry.duration) 0 entries
 
         billableTime =
             case timeEntries of
@@ -96,9 +95,9 @@ taskLine issue timeEntries =
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
             , td [] [ estimated |> toString |> text ]
-            , td [] [ issue.doneRatio |> Debug.log "ratio" |> toString |> text]
+            , td [] [ issue.doneRatio |> toString |> text]
             , td [] [ text issue.status ]
-            , td [] [ used |> convertIntoDay |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ text (roundedAtTwoDigitAfterComma (timeLeftCalculator estimated billableTime)) ]
             , td [] [ text (toString (capitalCalculator estimated issue.doneRatio billableTime)) ]
@@ -108,22 +107,22 @@ billableAccumulator : TimeEntry -> Float -> Float
 billableAccumulator timeEntry acc =
     case timeEntry.isBillable of
         False ->
-            acc + 0
+            acc
         True ->
-            acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000) |> convertIntoDay
+            acc + toFloat timeEntry.durations |> msToDays
 
 timeLeftCalculator : Float -> Float -> Float
 timeLeftCalculator estimated billableTime =
-    estimated - billableTime |> convertIntoDay
+    estimated - billableTime |> msToDays
 
-convertIntoDay : Float -> Float
-convertIntoDay decTime =
-    decTime / 6
+msToDays : Float -> Float
+msToDays ms =
+    (ms / 60 / 60 / 1000) / 6
 
 roundedAtTwoDigitAfterComma : Float -> String
 roundedAtTwoDigitAfterComma =
     Round.round 2
 
 capitalCalculator : Float -> Int -> Float -> Float
-capitalCalculator estimated realisated billableTime =
-    estimated - ((100 * (billableTime)) / toFloat (realisated))
+capitalCalculator estimated realised billableTime =
+    estimated - ((100 * (billableTime)) / toFloat (realised))
