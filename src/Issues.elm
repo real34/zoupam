@@ -156,12 +156,32 @@ view model togglKey =
 
 iterationTableView : List ZoupamTask -> String -> String -> Html Msg
 iterationTableView tasks version togglKey =
+    let
+        taskWithIssue =
+            List.filter (\task ->
+                case task.issue of
+                    Nothing -> False
+                    Just _ -> True
+            ) tasks
+
+        unknownTaskLine =
+            List.filter (\task ->
+                case task.issue of
+                    Nothing -> True
+                    Just _ -> False
+            ) tasks
+    in
+
     div []
         [ h2 [] [ text version ]
         , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
         , table []
             [ Views.Versions.tableHeader
-            , (tableBody tasks)
+            , (tableBody taskWithIssue)
+            ]
+        , table []
+            [ Views.Versions.testHeader
+            , (tableBodyForUnknownTaskLine unknownTaskLine)
             ]
         ]
 
@@ -169,18 +189,28 @@ iterationTableView tasks version togglKey =
 tableBody : List ZoupamTask -> Html Msg
 tableBody tasks =
     tbody []
-        (List.filterMap
+        (List.map
             (\task ->
                 let
                     result =
                         case task.issue of
                             Nothing ->
-                                Just (Views.Versions.unknownTaskLine task.timeEntries)
+                                Views.Versions.unknownTaskLine task.timeEntries
 
                             Just issue ->
-                                Just (Views.Versions.taskLine issue task.timeEntries)
+                                Views.Versions.taskLine issue task.timeEntries
                 in
                     result
+            )
+            tasks
+        )
+
+tableBodyForUnknownTaskLine : List ZoupamTask -> Html Msg
+tableBodyForUnknownTaskLine tasks =
+    tbody []
+        (List.map
+            (\task -> Views.Versions.unknownTaskLine task.timeEntries
+
             )
             tasks
         )
