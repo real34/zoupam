@@ -94,13 +94,13 @@ taskLine issue timeEntries =
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
-            , td [] [ estimated |> toString |> text ]
+            , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ issue.doneRatio |> toString |> text]
             , td [] [ text issue.status ]
             , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ text (roundedAtTwoDigitAfterComma (timeLeftCalculator estimated billableTime)) ]
-            , td [] [ text (toString (capitalCalculator estimated issue.doneRatio billableTime)) ]
+            , td [] [ billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ (timeLeftCalculator estimated billableTime) |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ capitalCalculator estimated issue.doneRatio billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             ]
 
 billableAccumulator : TimeEntry -> Float -> Float
@@ -109,15 +109,19 @@ billableAccumulator timeEntry acc =
         False ->
             acc
         True ->
-            acc + toFloat timeEntry.duration |> msToDays
+            acc + toFloat timeEntry.duration
 
 timeLeftCalculator : Float -> Float -> Float
 timeLeftCalculator estimated billableTime =
-    estimated - billableTime |> msToDays
+    (estimated |> daysToMs) - billableTime
 
 msToDays : Float -> Float
 msToDays ms =
     (ms / 60 / 60 / 1000) / 6
+
+daysToMs : Float -> Float
+daysToMs days =
+    days * 6 * 60 * 60 * 1000
 
 roundedAtTwoDigitAfterComma : Float -> String
 roundedAtTwoDigitAfterComma =
@@ -125,4 +129,4 @@ roundedAtTwoDigitAfterComma =
 
 capitalCalculator : Float -> Int -> Float -> Float
 capitalCalculator estimated realised billableTime =
-    estimated - ((100 * (billableTime)) / toFloat (realised))
+    (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised))
