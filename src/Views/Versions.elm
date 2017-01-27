@@ -109,7 +109,7 @@ billableAccumulator timeEntry acc =
         False ->
             acc
         True ->
-            acc + toFloat timeEntry.durations |> msToDays
+            acc + toFloat timeEntry.duration |> msToDays
 
 timeLeftCalculator : Float -> Float -> Float
 timeLeftCalculator estimated billableTime =
