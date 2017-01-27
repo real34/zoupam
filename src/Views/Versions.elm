@@ -20,67 +20,32 @@ tableHeader =
         , th [] [ text "Capital" ]
         ]
 
-testHeader : Html msg
-testHeader =
+tableUnknownTaskLineHeader : Html msg
+tableUnknownTaskLineHeader =
     thead []
         [ th [] [ text "Pas de ticket" ]
         , th [] [ text "Description" ]
         , th [] [ text "Temps consommé" ]
-        , th [] [ text "   Temps facturable" ]
-        , th [] [ text "Temps consommé total" ]
+        , th [] [ text "Temps facturable" ]
         ]
 
 
-unknownTaskLine : Maybe (List TimeEntry) -> Html msg
-unknownTaskLine timeEntries =
-    let
-        entries =
-            case timeEntries of
-                Nothing ->
-                    []
-
-                Just entries ->
-                    entries
-
-        used =
-            List.foldr (\timeEntry acc -> acc + (TogglAPI.durationInMinutes timeEntry.duration)) 0 entries
-
-        billableTime =
-            case timeEntries of
-                Nothing ->
-                    0
-
-                Just entries ->
-                    List.foldr billableAccumulator 0 entries
-
-    in
+unknownTaskLine : TimeEntry -> Html msg
+unknownTaskLine entry =
         tr []
             [ td [] [ text "..." ]
-            , td [] [ ul [] (List.map otherTimeEntryDescription entries) ] --- Une liste qui représente enfaite une ligne
-            , td [] [ ul [] (List.map otherTimeEntryTogglTime entries) ]
-            , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ used |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ entry.description |> text ]
+            , td [] [ otherTimeEntryTogglTime entry ]
+            , td [] [ billableAccumulator entry 0 |> roundedAtTwoDigitAfterComma |> text ]
             ]
---        tr[]
---            [ td [] [text "test"]
---             ]
-
-
-otherTimeEntryDescription : TimeEntry -> Html msg
-otherTimeEntryDescription entry =
-    li []
-        [ entry.description
-            |> text
-        ]
 
 otherTimeEntryTogglTime : TimeEntry -> Html msg
 otherTimeEntryTogglTime entry  =
-    li []
-        [ entry.duration
+ entry.duration
             |> TogglAPI.durationInMinutes
             |> roundedAtTwoDigitAfterComma
             |> text
-        ]
+
 
 testBillable : Float -> Html msg
 testBillable billableTime =
@@ -124,13 +89,13 @@ taskLine issue timeEntries =
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
-            , td [] [ estimated |> toString |> text ]
+            , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ issue.doneRatio |> toString |> text]
             , td [] [ text issue.status ]
             , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ text (roundedAtTwoDigitAfterComma (timeLeftCalculator estimated billableTime)) ]
-            , td [] [ text (toString (capitalCalculator estimated issue.doneRatio billableTime)) ]
+            , td [] [  timeLeftCalculator estimated billableTime |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ capitalCalculator estimated issue.doneRatio billableTime |> roundedAtTwoDigitAfterComma |> text ]
             ]
 
 billableAccumulator : TimeEntry -> Float -> Float
