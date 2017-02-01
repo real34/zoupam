@@ -18,6 +18,7 @@ tableHeader =
         , th [] [ text "Temps facturable" ]
         , th [] [ text "Temps restant" ]
         , th [] [ text "Capital" ]
+        , th [] [ text "Priorité" ]
         ]
 
 
@@ -95,12 +96,13 @@ taskLine issue timeEntries =
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
             , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ issue.doneRatio |> toString |> text]
+            , td [] [ issue.doneRatio |> toString |> text |> Debug.log(issue.priority)]
             , td [] [ text issue.status ]
             , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ (timeLeftCalculator estimated billableTime) |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ capitalCalculator estimated issue.doneRatio billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ issue.priority |> text ]
             ]
 
 billableAccumulator : TimeEntry -> Float -> Float
