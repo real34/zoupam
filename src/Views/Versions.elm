@@ -4,7 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import TogglAPI exposing (TimeEntry)
 import RedmineAPI exposing (Issue)
-
+import Round
 
 tableHeader : Html msg
 tableHeader =
@@ -16,8 +16,9 @@ tableHeader =
         , th [] [ text "État" ]
         , th [] [ text "Temps consommé" ]
         , th [] [ text "Temps facturable" ]
-        , th [] [ text "% temps" ]
+        , th [] [ text "Temps restant" ]
         , th [] [ text "Capital" ]
+        , th [] [ text "Priorité" ]
         ]
 
 
@@ -77,19 +78,72 @@ taskLine issue timeEntries =
         used =
             case timeEntries of
                 Nothing ->
-                    "TBD"
+                    0
 
                 Just entries ->
-                    toString (List.foldr (\timeEntry acc -> acc + (toFloat (timeEntry.duration) / 60 / 60 / 1000)) 0 entries)
+                    List.foldr (\timeEntry acc -> acc + toFloat timeEntry.duration) 0 entries
+
+        billableTime =
+            case timeEntries of
+                Nothing ->
+                    0
+
+                Just entries ->
+                    List.foldr billableAccumulator 0 entries
+
+        capital =
+            case capitalCalculator estimated issue.doneRatio billableTime of
+                Nothing ->
+                    "NA"
+
+                Just capital ->
+                    capital |> formatTime
+
     in
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
-            , td [] [ text issue.subject ]
-            , td [] [ text (toString estimated) ]
-            , td [] [ text (toString issue.doneRatio) ]
+            , td [] [ issue.subject |> toString |> text]
+            , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ issue.doneRatio |> toString |> text ]
             , td [] [ text issue.status ]
-            , td [] [ text used ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
+            , td [] [ used |> formatTime |> text ]
+            , td [] [ billableTime |> formatTime |> text ]
+            , td [] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
+            , td [] [ capital |> text ]
+            , td [] [ issue.priority |> text ]
             ]
+
+billableAccumulator : TimeEntry -> Float -> Float
+billableAccumulator timeEntry acc =
+    case timeEntry.isBillable of
+        False ->
+            acc
+        True ->
+            acc + toFloat timeEntry.duration
+
+timeLeftCalculator : Float -> Float -> Float
+timeLeftCalculator estimated billableTime =
+    (estimated |> daysToMs) - billableTime
+
+msToDays : Float -> Float
+msToDays ms =
+    (ms / 60 / 60 / 1000) / 6
+
+daysToMs : Float -> Float
+daysToMs days =
+    days * 6 * 60 * 60 * 1000
+
+roundedAtTwoDigitAfterComma : Float -> String
+roundedAtTwoDigitAfterComma =
+    Round.round 2
+
+formatTime : Float -> String
+formatTime ms =
+    ms |> msToDays |> roundedAtTwoDigitAfterComma
+
+capitalCalculator : Float -> Int -> Float -> Maybe Float
+capitalCalculator estimated realised billableTime =
+    if realised == 0 then
+        Nothing
+    else
+        (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised)) |> Just

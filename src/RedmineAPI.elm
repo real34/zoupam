@@ -13,7 +13,7 @@ type alias Issue =
     , doneRatio : Int
     , version : Maybe Version
     , status : String
-    , estimated : Maybe Int
+    , estimated : Maybe Float
     }
 
 
@@ -53,7 +53,7 @@ getIssues key projectId msg =
                 ++ key
                 ++ "&project_id="
                 ++ projectId
-                ++ "&status_id=*&limit=1000"
+                ++ "&status_id=*&limit=1000&sort=priority:desc"
     in
         Http.send msg <| Http.get url issuesDecoder
 
@@ -75,6 +75,6 @@ issuesDecoder =
         |: (field "done_ratio" Json.int)
         |: (Json.maybe <| field "fixed_version" <| Json.map2 Version (field "id" Json.int) (field "name" Json.string))
         |: (field "status" <| field "name" Json.string)
-        |: (Json.maybe <| field "estimated_hours" Json.int)
+        |: (Json.maybe <| field "estimated_hours" Json.float)
         |> Json.list
         |> field "issues"
