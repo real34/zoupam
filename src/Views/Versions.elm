@@ -91,17 +91,25 @@ taskLine issue timeEntries =
                 Just entries ->
                     List.foldr billableAccumulator 0 entries
 
+        capital =
+            case capitalCalculator estimated issue.doneRatio billableTime of
+                Nothing ->
+                    "Erreur, calcul impossible"
+
+                Just capital ->
+                    capital |> formatTime
+
     in
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
             , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ issue.doneRatio |> toString |> text |> Debug.log(issue.priority)]
+            , td [] [ issue.doneRatio |> toString |> text ]
             , td [] [ text issue.status ]
-            , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ (timeLeftCalculator estimated billableTime) |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ capitalCalculator estimated issue.doneRatio billableTime |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ used |> formatTime |> text ]
+            , td [] [ billableTime |> formatTime |> text ]
+            , td [] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
+            , td [] [ capital |> text ]
             , td [] [ issue.priority |> text ]
             ]
 
@@ -129,6 +137,13 @@ roundedAtTwoDigitAfterComma : Float -> String
 roundedAtTwoDigitAfterComma =
     Round.round 2
 
-capitalCalculator : Float -> Int -> Float -> Float
+formatTime : Float -> String
+formatTime ms =
+    Round.round 2 ((ms / 60 / 60 / 1000) / 6)
+
+capitalCalculator : Float -> Int -> Float -> Maybe Float
 capitalCalculator estimated realised billableTime =
-    (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised))
+    if realised == 0 then
+     Nothing
+      else
+       (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised)) |> Just
