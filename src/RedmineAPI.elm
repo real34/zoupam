@@ -53,7 +53,7 @@ getIssues key projectId msg =
                 ++ key
                 ++ "&project_id="
                 ++ projectId
-                ++ "&status_id=*&limit=1000"
+                ++ "&status_id=*&limit=1000&sort=priority:desc"
     in
         Http.send msg <| Http.get url issuesDecoder
 

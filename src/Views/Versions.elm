@@ -18,6 +18,7 @@ tableHeader =
         , th [] [ text "Temps facturable" ]
         , th [] [ text "Temps restant" ]
         , th [] [ text "Capital" ]
+        , th [] [ text "Priorité" ]
         ]
 
 tableUnknownTaskLineHeader : Html msg
@@ -85,17 +86,26 @@ taskLine issue timeEntries =
                 Just entries ->
                     List.foldr billableAccumulator 0 entries
 
+        capital =
+            case capitalCalculator estimated issue.doneRatio billableTime of
+                Nothing ->
+                    "NA"
+
+                Just capital ->
+                    capital |> formatTime
+
     in
         tr []
             [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
             , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ issue.doneRatio |> toString |> text]
+            , td [] [ issue.doneRatio |> toString |> text ]
             , td [] [ text issue.status ]
-            , td [] [ used |> msToDays |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ billableTime |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [  timeLeftCalculator estimated billableTime |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ capitalCalculator estimated issue.doneRatio billableTime |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ used |> formatTime |> text ]
+            , td [] [ billableTime |> formatTime |> text ]
+            , td [] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
+            , td [] [ capital |> text ]
+            , td [] [ issue.priority |> text ]
             ]
 
 billableAccumulator : TimeEntry -> Float -> Float
@@ -104,20 +114,31 @@ billableAccumulator timeEntry acc =
         False ->
             acc
         True ->
-            acc + toFloat timeEntry.duration |> msToDays
+            acc + toFloat timeEntry.duration
 
 timeLeftCalculator : Float -> Float -> Float
 timeLeftCalculator estimated billableTime =
-    estimated - billableTime |> msToDays
+    (estimated |> daysToMs) - billableTime
 
 msToDays : Float -> Float
 msToDays ms =
     (ms / 60 / 60 / 1000) / 6
 
+daysToMs : Float -> Float
+daysToMs days =
+    days * 6 * 60 * 60 * 1000
+
 roundedAtTwoDigitAfterComma : Float -> String
 roundedAtTwoDigitAfterComma =
     Round.round 2
 
-capitalCalculator : Float -> Int -> Float -> Float
+formatTime : Float -> String
+formatTime ms =
+    ms |> msToDays |> roundedAtTwoDigitAfterComma
+
+capitalCalculator : Float -> Int -> Float -> Maybe Float
 capitalCalculator estimated realised billableTime =
-    estimated - ((100 * (billableTime)) / toFloat (realised))
+    if realised == 0 then
+        Nothing
+    else
+        (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised)) |> Just
