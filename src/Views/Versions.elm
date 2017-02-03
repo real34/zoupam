@@ -94,7 +94,7 @@ taskLine issue timeEntries =
         capital =
             case capitalCalculator estimated issue.doneRatio billableTime of
                 Nothing ->
-                    "Erreur, calcul impossible"
+                    "NA"
 
                 Just capital ->
                     capital |> formatTime
@@ -139,11 +139,11 @@ roundedAtTwoDigitAfterComma =
 
 formatTime : Float -> String
 formatTime ms =
-    Round.round 2 ((ms / 60 / 60 / 1000) / 6)
+    ms |> msToDays |> roundedAtTwoDigitAfterComma
 
 capitalCalculator : Float -> Int -> Float -> Maybe Float
 capitalCalculator estimated realised billableTime =
     if realised == 0 then
-     Nothing
-      else
-       (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised)) |> Just
+        Nothing
+    else
+        (estimated  |> daysToMs) - ((100 * (billableTime)) / toFloat (realised)) |> Just
