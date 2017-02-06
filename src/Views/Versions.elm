@@ -37,7 +37,7 @@ unknownTaskLine entry =
             [ td [] [ text "..." ]
             , td [] [ entry.description |> text ]
             , td [] [ otherTimeEntryTogglTime entry ]
-            , td [] [ billableAccumulator entry 0 |> roundedAtTwoDigitAfterComma |> text ]
+            , td [] [ billableAccumulator entry 0 |> formatTime |> text ]
             ]
 
 otherTimeEntryTogglTime : TimeEntry -> Html msg
@@ -46,15 +46,6 @@ otherTimeEntryTogglTime entry  =
             |> TogglAPI.durationInMinutes
             |> roundedAtTwoDigitAfterComma
             |> text
-
-
-testBillable : Float -> Html msg
-testBillable billableTime =
-    li []
-        [  billableTime |> toString |> text
-    ]
-
-
 
 taskLine : Issue -> Maybe (List TimeEntry) -> Html msg
 taskLine issue timeEntries =
