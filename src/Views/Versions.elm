@@ -24,8 +24,7 @@ tableHeader =
 tableUnknownTaskLineHeader : Html msg
 tableUnknownTaskLineHeader =
     thead []
-        [ th [] [ text "Pas de ticket" ]
-        , th [] [ text "Description" ]
+        [ th [] [ text "Description" ]
         , th [] [ text "Temps consommé" ]
         , th [] [ text "Temps facturable" ]
         ]
@@ -34,8 +33,7 @@ tableUnknownTaskLineHeader =
 unknownTaskLine : TimeEntry -> Html msg
 unknownTaskLine entry =
         tr []
-            [ td [] [ text "..." ]
-            , td [] [ entry.description |> text ]
+            [ td [] [ entry.description |> text ]
             , td [] [ otherTimeEntryTogglTime entry ]
             , td [] [ billableAccumulator entry 0 |> formatTime |> text ]
             ]

@@ -153,7 +153,6 @@ view model togglKey =
     in
         result
 
-
 iterationTableView : List ZoupamTask -> String -> String -> Html Msg
 iterationTableView tasks version togglKey =
     let
@@ -175,6 +174,8 @@ iterationTableView tasks version togglKey =
     div []
         [ h2 [] [ text version ]
         , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
+        , br [] []
+        , b [] [text "Ticket Toggl liés à un ticket Redmine: "]
         , table []
             [ Views.Versions.tableHeader
             , (tableBody taskWithIssue)
@@ -185,12 +186,16 @@ iterationTableView tasks version togglKey =
                     Nothing ->
                         text ""
                     Just taskLine ->
-                        table []
+                        div []
+                        [ br [] []
+                        , b [] [text "Ticket Toggl non liés à un ticket Redmine: "]
+                        , table []
                             [ Views.Versions.tableUnknownTaskLineHeader
                             , (tableBodyForUnknownTaskLine taskLine)
                             ]
+                        ]
             in
-                result
+            result
         )
         ]
 
@@ -216,16 +221,16 @@ tableBody tasks =
 
 tableBodyForUnknownTaskLine : ZoupamTask -> Html Msg
 tableBodyForUnknownTaskLine task =
-    let
-        result =
-            case task.timeEntries of
-                Nothing ->
-                    text "Aucune entrée Toggl n'est pas associé à un ticket Redmine"
-                Just timeEntries ->
-                    tbody []
-                        (List.map
-                            (\timeEntry -> Views.Versions.unknownTaskLine timeEntry)
-                            timeEntries
-                        )
-    in
-        result
+        let
+            result =
+                case task.timeEntries of
+                    Nothing ->
+                        text "Aucune entrée Toggl n'est pas associé à un ticket Redmine"
+                    Just timeEntries ->
+                        tbody []
+                            (List.map
+                                (\timeEntry -> Views.Versions.unknownTaskLine timeEntry)
+                                timeEntries
+                            )
+        in
+            result
