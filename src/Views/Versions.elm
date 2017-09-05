@@ -101,7 +101,7 @@ taskLine issue timeEntries =
 
     in
         tr []
-            [ td [] [ a [ target "_blank", href ("http://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
+            [ td [] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
             , td [] [ issue.subject |> toString |> text]
             , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
             , td [] [ issue.doneRatio |> toString |> text ]
