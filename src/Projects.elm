@@ -3,12 +3,12 @@ module Projects exposing (..)
 import Html exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (value)
-import RedmineAPI
+import RedmineAPI exposing (Projects, Project)
 import Http
 
 
 type alias Model =
-    { projects : Maybe (List ( Int, String ))
+    { projects : Maybe ( Projects )
     , selected : Maybe String
     , loading : Bool
     , redmineKey : String
@@ -18,7 +18,7 @@ type alias Model =
 type Msg
     = ProjectSelect String
     | FetchStart String
-    | FetchEnd (Result Http.Error (List ( Int, String )))
+    | FetchEnd (Result Http.Error (Projects))
 
 
 init : Model
@@ -30,9 +30,13 @@ init =
     }
 
 
-emptyProject : ( Int, String )
+emptyProject : Project
 emptyProject =
-    ( -1, "--- Veuillez sélectionner un projet ---" )
+    {
+        id = -1
+        , name = "--- Veuillez sélectionner un projet ---"
+        , status = 1
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,7 +58,7 @@ update msg model =
                     { model | selected = Just projectId } ! []
 
         FetchEnd (Ok fetchedProjects) ->
-            { model | loading = False, projects = Just (emptyProject :: fetchedProjects) } ! []
+            { model | loading = False, projects = Just (emptyProject :: fetchedProjects |> List.filter RedmineAPI.isActiveProject) } ! []
 
         FetchEnd (Err _) ->
             { model | loading = False } ! []
@@ -70,7 +74,9 @@ view model =
 
                 Just projects ->
                     div []
-                        [ select [ onInput ProjectSelect ] (List.map (\( projectId, projectName ) -> option [ projectId |> toString |> value ] [ text projectName ]) projects)
+                        [ select [ onInput ProjectSelect ] (List.map (
+                            \( project ) -> option [ project.id |> toString |> value ] [ text project.name ]) projects
+                        )
                         ]
 
         True ->

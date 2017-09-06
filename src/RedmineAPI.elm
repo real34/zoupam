@@ -23,14 +23,23 @@ type alias Version =
     }
 
 
+type alias Project =
+    { id : Int
+    , name : String
+    , status : Int
+    }
+
 type alias Projects =
-    List ( Int, String )
+    List Project
 
 
 redmineUrl : String
 redmineUrl =
     "https://projets.occitech.fr"
 
+isActiveProject : Project -> Bool
+isActiveProject project =
+    project.status == 1
 
 getProjects : String -> (Result Http.Error Projects -> msg) -> Cmd msg
 getProjects key msg =
@@ -60,7 +69,10 @@ getIssues key projectId msg =
 
 projectsDecoder : Json.Decoder Projects
 projectsDecoder =
-    Json.map2 (,) (field "id" Json.int) (field "name" Json.string)
+    Json.succeed Project
+        |: (field "id" Json.int)
+        |: (field "name" Json.string)
+        |: (field "status" Json.int)
         |> Json.list
         |> field "projects"
 
