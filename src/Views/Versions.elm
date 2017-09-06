@@ -21,45 +21,29 @@ tableHeader =
         , th [] [ text "Priorité" ]
         ]
 
-
-unknownTaskLine : Maybe (List TimeEntry) -> Html msg
-unknownTaskLine timeEntries =
-    let
-        entries =
-            case timeEntries of
-                Nothing ->
-                    []
-
-                Just entries ->
-                    entries
-
-        used =
-            toString (List.foldr (\timeEntry acc -> acc + (TogglAPI.durationInMinutes timeEntry.duration)) 0 entries)
-    in
-        tr []
-            [ td [] [ text "Le reste" ]
-            , td [] [ ul [] (List.map otherTimeEntryView entries) ]
-            , td [] []
-            , td [] []
-            , td [] []
-            , td [] [ text used ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            , td [] [ text "TODO" ]
-            ]
-
-
-otherTimeEntryView : TimeEntry -> Html msg
-otherTimeEntryView entry =
-    li []
-        [ entry.duration
-            |> TogglAPI.durationInMinutes
-            |> toString
-            |> (++) " - "
-            |> (++) entry.description
-            |> text
+tableUnknownTaskLineHeader : Html msg
+tableUnknownTaskLineHeader =
+    thead []
+        [ th [] [ text "Description" ]
+        , th [] [ text "Temps consommé" ]
+        , th [] [ text "Temps facturable" ]
         ]
 
+
+unknownTaskLine : TimeEntry -> Html msg
+unknownTaskLine entry =
+        tr []
+            [ td [] [ entry.description |> text ]
+            , td [] [ otherTimeEntryTogglTime entry ]
+            , td [] [ billableAccumulator entry 0 |> formatTime |> text ]
+            ]
+
+otherTimeEntryTogglTime : TimeEntry -> Html msg
+otherTimeEntryTogglTime entry  =
+ entry.duration
+            |> TogglAPI.durationInMinutes
+            |> roundedAtTwoDigitAfterComma
+            |> text
 
 taskLine : Issue -> Maybe (List TimeEntry) -> Html msg
 taskLine issue timeEntries =

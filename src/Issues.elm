@@ -153,34 +153,84 @@ view model togglKey =
     in
         result
 
-
 iterationTableView : List ZoupamTask -> String -> String -> Html Msg
 iterationTableView tasks version togglKey =
+    let
+        taskWithIssue =
+            List.filter (\task ->
+                case task.issue of
+                    Nothing -> False
+                    Just _ -> True
+            ) tasks
+
+        unknownTaskIssue =
+            List.head (List.filter (\task ->
+                case task.issue of
+                    Nothing -> True
+                    Just _ -> False
+            ) tasks)
+    in
+
     div []
         [ h2 [] [ text version ]
         , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
+        , br [] []
+        , b [] [text "Ticket Toggl liés à un ticket Redmine: "]
         , table []
             [ Views.Versions.tableHeader
-            , (tableBody tasks)
+            , (tableBody taskWithIssue)
             ]
+        , (
+            let
+                result = case unknownTaskIssue of
+                    Nothing ->
+                        text ""
+                    Just taskLine ->
+                        div []
+                        [ br [] []
+                        , b [] [text "Ticket Toggl non liés à un ticket Redmine: "]
+                        , table []
+                            [ Views.Versions.tableUnknownTaskLineHeader
+                            , (tableBodyForUnknownTaskLine taskLine)
+                            ]
+                        ]
+            in
+            result
+        )
         ]
 
 
 tableBody : List ZoupamTask -> Html Msg
 tableBody tasks =
     tbody []
-        (List.filterMap
+        (List.map
             (\task ->
                 let
                     result =
                         case task.issue of
                             Nothing ->
-                                Just (Views.Versions.unknownTaskLine task.timeEntries)
+                                text "Erreur, impossible de trouver une entrée Redmine"
 
                             Just issue ->
-                                Just (Views.Versions.taskLine issue task.timeEntries)
+                                Views.Versions.taskLine issue task.timeEntries
                 in
                     result
             )
             tasks
         )
+
+tableBodyForUnknownTaskLine : ZoupamTask -> Html Msg
+tableBodyForUnknownTaskLine task =
+        let
+            result =
+                case task.timeEntries of
+                    Nothing ->
+                        text "Aucune entrée Toggl n'est pas associé à un ticket Redmine"
+                    Just timeEntries ->
+                        tbody []
+                            (List.map
+                                (\timeEntry -> Views.Versions.unknownTaskLine timeEntry)
+                                timeEntries
+                            )
+        in
+            result
