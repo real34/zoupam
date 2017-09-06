@@ -2,7 +2,6 @@ module Issues exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (href, target)
 import Http
 import Dict exposing (Dict)
 import RedmineAPI exposing (Issue)
