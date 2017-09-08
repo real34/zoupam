@@ -2,7 +2,7 @@ module Projects exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (value)
+import Html.Attributes exposing (value, class)
 import RedmineAPI exposing (Projects, Project)
 import Http
 
@@ -73,8 +73,8 @@ view model =
                     div [] []
 
                 Just projects ->
-                    div []
-                        [ select [ onInput ProjectSelect ] (List.map (
+                    div [ class "tc" ]
+                        [ select [ onInput ProjectSelect, class "pa2" ] (List.map (
                             \( project ) -> option [ project.id |> toString |> value ] [ text project.name ]) projects
                         )
                         ]

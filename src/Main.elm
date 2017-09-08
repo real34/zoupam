@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (class, style)
 import Configurator exposing (..)
 import Projects
 import Issues
@@ -102,8 +103,8 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ h1 [] [ text "Zoupam v3" ]
+    div [ class "sans-serif w-90 center" ]
+        [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ("cursor", "default")] ] [ text "Zoupam v3" ]
         , Configurator.view model.config
             |> Html.map UpdateConfig
         , Projects.view model.projects

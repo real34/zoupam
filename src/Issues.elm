@@ -2,6 +2,7 @@ module Issues exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick)
+import Html.Attributes exposing (class)
 import Http
 import Dict exposing (Dict)
 import RedmineAPI exposing (Issue)
@@ -170,14 +171,14 @@ iterationTableView tasks version togglKey =
             ) tasks)
     in
 
-    div []
-        [ h2 [] [ text version ]
-        , button [ onClick (Zou togglKey version) ] [ text "Zou" ]
-        , br [] []
-        , b [] [text "Ticket Toggl liés à un ticket Redmine: "]
-        , table []
-            [ Views.Versions.tableHeader
-            , (tableBody taskWithIssue)
+    div [ class "pa3 ma3 o-40 glow" ]
+        [ h2 [ class "bb" ] [ text version ]
+        , div [ class "fr" ] [ button [ onClick (Zou togglKey version), class "ml3 ph4 pv2 br-pill outline-0" ] [ text "Zou" ] ]
+        , div [ class "overflow-x-auto" ]
+            [ table []
+                [ Views.Versions.tableHeader
+                , (tableBody taskWithIssue)
+                ]
             ]
         , (
             let
@@ -185,12 +186,13 @@ iterationTableView tasks version togglKey =
                     Nothing ->
                         text ""
                     Just taskLine ->
-                        div []
-                        [ br [] []
-                        , b [] [text "Ticket Toggl non liés à un ticket Redmine: "]
-                        , table []
-                            [ Views.Versions.tableUnknownTaskLineHeader
-                            , (tableBodyForUnknownTaskLine taskLine)
+                        div [ class "mt4 bt b--near-white"]
+                        [ h3 [ class "f3"] [text "Tickets Toggl non liés à un ticket Redmine"]
+                        , div [ class "overflow-x-auto" ]
+                            [ table []
+                                [ Views.Versions.tableUnknownTaskLineHeader
+                                , (tableBodyForUnknownTaskLine taskLine)
+                                ]
                             ]
                         ]
             in

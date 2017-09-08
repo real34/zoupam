@@ -6,36 +6,21 @@ import TogglAPI exposing (TimeEntry)
 import RedmineAPI exposing (Issue)
 import Round
 
-tableHeader : Html msg
-tableHeader =
-    thead []
-        [ th [] [ text "#Id" ]
-        , th [] [ text "Description" ]
-        , th [] [ text "Estimé" ]
-        , th [] [ text "% Réalisé" ]
-        , th [] [ text "État" ]
-        , th [] [ text "Temps consommé" ]
-        , th [] [ text "Temps facturable" ]
-        , th [] [ text "Temps restant" ]
-        , th [] [ text "Capital" ]
-        , th [] [ text "Priorité" ]
-        ]
-
 tableUnknownTaskLineHeader : Html msg
 tableUnknownTaskLineHeader =
     thead []
-        [ th [] [ text "Description" ]
-        , th [] [ text "Temps consommé" ]
-        , th [] [ text "Temps facturable" ]
+        [ th [ class "pv2 ph3" ] [ text "Description" ]
+        , th [ class "pv2 ph3 tr" ] [ text "Temps consommé" ]
+        , th [ class "pv2 ph3 tr" ] [ text "Temps facturable" ]
         ]
 
 
 unknownTaskLine : TimeEntry -> Html msg
 unknownTaskLine entry =
-        tr []
-            [ td [] [ entry.description |> text ]
-            , td [] [ otherTimeEntryTogglTime entry ]
-            , td [] [ billableAccumulator entry 0 |> formatTime |> text ]
+        tr [ class "striped--near-white" ]
+            [ td [ class "pv2 ph3" ] [ entry.description |> text ]
+            , td [ class "pv2 ph3 tr" ] [ otherTimeEntryTogglTime entry ]
+            , td [ class "pv2 ph3 tr" ] [ billableAccumulator entry 0 |> formatTime |> text ]
             ]
 
 otherTimeEntryTogglTime : TimeEntry -> Html msg
@@ -45,16 +30,31 @@ otherTimeEntryTogglTime entry  =
             |> roundedAtTwoDigitAfterComma
             |> text
 
+tableHeader : Html msg
+tableHeader =
+    thead []
+        [ th [ class "pv2 ph3"] [ text "#Id" ]
+        , th [ class "pv2 ph3"] [ text "Description" ]
+        , th [ class "pv2 ph3 tr"] [ text "Estimé" ]
+        , th [ class "pv2 ph3 tr"] [ text "% Réalisé" ]
+        , th [ class "pv2 ph3"] [ text "État" ]
+        , th [ class "pv2 ph3 tr"] [ text "Temps consommé" ]
+        , th [ class "pv2 ph3 tr"] [ text "Temps facturable" ]
+        , th [ class "pv2 ph3 tr"] [ text "Temps restant" ]
+        , th [ class "pv2 ph3 tr"] [ text "Capital" ]
+        , th [ class "pv2 ph3"] [ text "Priorité" ]
+        ]
+
 taskLine : Issue -> Maybe (List TimeEntry) -> Html msg
 taskLine issue timeEntries =
     let
         issueId =
-            "#" ++ (toString issue.id)
+            (toString issue.id)
 
         estimated =
             case issue.estimated of
                 Nothing ->
-                    0
+                    0 -- TODO Display " - " when no estimation provided to highlight the fact that it is out of the game
 
                 Just hour ->
                     hour
@@ -71,30 +71,29 @@ taskLine issue timeEntries =
             case timeEntries of
                 Nothing ->
                     0
-
                 Just entries ->
                     List.foldr billableAccumulator 0 entries
 
         capital =
             case capitalCalculator estimated issue.doneRatio billableTime of
                 Nothing ->
-                    "NA"
+                    " - "
 
                 Just capital ->
                     capital |> formatTime
 
     in
-        tr []
-            [ td [] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId) ] [ text issueId ] ]
-            , td [] [ issue.subject |> toString |> text]
-            , td [] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
-            , td [] [ issue.doneRatio |> toString |> text ]
-            , td [] [ text issue.status ]
-            , td [] [ used |> formatTime |> text ]
-            , td [] [ billableTime |> formatTime |> text ]
-            , td [] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
-            , td [] [ capital |> text ]
-            , td [] [ issue.priority |> text ]
+        tr [ class "striped--near-white" ]
+            [ td [ class "pv2 ph3" ] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId), class "link" ] [ text ("#" ++ issueId) ] ]
+            , td [ class "pv2 ph3" ] [ issue.subject |> toString |> text]
+            , td [ class "pv2 ph3 tr" ] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
+            , td [ class "pv2 ph3 tr" ] [ issue.doneRatio |> toString |> text ]
+            , td [ class "pv2 ph3" ] [ text issue.status ]
+            , td [ class "pv2 ph3 tr" ] [ used |> formatTime |> text ]
+            , td [ class "pv2 ph3 tr" ] [ billableTime |> formatTime |> text ]
+            , td [ class "pv2 ph3 tr" ] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
+            , td [ class "pv2 ph3 tr" ] [ capital |> text ]
+            , td [ class "pv2 ph3" ] [ issue.priority |> text ]
             ]
 
 billableAccumulator : TimeEntry -> Float -> Float

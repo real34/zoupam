@@ -15,6 +15,6 @@ view : (String -> msg) -> Html msg -> Field -> Html msg
 view msg helpAPI field =
     div []
         [ label [ for field.id ] [ text field.label ]
-        , input [ id field.id, onInput msg, value field.value ] []
+        , input [ id field.id, onInput msg, value field.value, class "w-30 pa1" ] []
         , helpAPI
         ]
