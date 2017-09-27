@@ -3,7 +3,6 @@ module Issues exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, target)
 import Http
-import Dict exposing (Dict)
 import RedmineAPI exposing (Issue, Version, urlOf)
 import TogglAPI exposing (TimeEntry)
 import String
@@ -27,7 +26,7 @@ type Msg
     = GoIssues String Int
     | FetchIssuesEnd (Result Http.Error (List Issue))
     | Zou String Model
-    | FetchTogglEnd (Result Http.Error (List TimeEntry))
+    | FetchTogglEnd String Int (Result Http.Error (List TimeEntry))
     | DefineUrl String
 
 
@@ -55,66 +54,68 @@ update msg model =
                 { model | loading = False } ! []
 
         Zou togglKey currModel ->
-            model ! [ TogglAPI.getDetails currModel.togglParams togglKey FetchTogglEnd ]
+            { model |
+                tasks = model.tasks |> List.map resetTimeEntries
+            } ! [ TogglAPI.getDetails currModel.togglParams 1 togglKey (FetchTogglEnd togglKey 1) ]
 
-        FetchTogglEnd (Err error) ->
+        FetchTogglEnd _ _ (Err error) ->
             let
                 pouet =
                     error |> Debug.log "error"
             in
                 model ! []
 
-        FetchTogglEnd (Ok toggl) ->
+        FetchTogglEnd togglKey page (Ok togglTimeEntries) ->
             let
-                issues =
-                    model.tasks
-                        |> List.filterMap issueIfExists
+                tasksWithIssue = model.tasks |> List.filter (\task -> task.issue /= Nothing)
                 zoupamTasks =
-                    List.map (includeTimeEntries toggl) issues
-                        ++ [ ZoupamTask Nothing (notBindedTimeEntries toggl issues) ]
+                    (tasksWithIssue |> List.map (appendTimeEntries togglTimeEntries))
+                        ++ [ ZoupamTask Nothing (notBindedTimeEntries togglTimeEntries tasksWithIssue) ]
+
+                -- Keep fetching new pages for other time entries while we won!
+                nextPage = page + 1
+                nextPageMsg =
+                    case List.isEmpty togglTimeEntries of
+                        True -> []
+                        False -> [ TogglAPI.getDetails model.togglParams nextPage togglKey (FetchTogglEnd togglKey nextPage) ]
             in
-                { model | tasks = zoupamTasks } ! []
+                { model | tasks = zoupamTasks } ! nextPageMsg
 
         DefineUrl url ->
             { model | togglParams = url |> Views.TogglSelector.fromUrl } ! []
 
-notBindedTimeEntries : List TimeEntry -> List Issue -> Maybe (List TimeEntry)
-notBindedTimeEntries timeEntries issues =
+resetTimeEntries : ZoupamTask -> ZoupamTask
+resetTimeEntries task =
+    { task | timeEntries = Nothing }
+
+notBindedTimeEntries : List TimeEntry -> List ZoupamTask -> Maybe (List TimeEntry)
+notBindedTimeEntries timeEntries tasks =
     (Just
         (List.filter
             (\entry ->
                 List.foldr
-                    (\issue acc -> acc && not (isReferencing issue entry))
+                    (\task acc -> acc && not (isReferencing task.issue entry))
                     True
-                    issues
+                    tasks
             )
             timeEntries
         )
     )
 
-
-issueIfExists : ZoupamTask -> Maybe Issue
-issueIfExists task =
-    case task.issue of
-        Nothing ->
-            Nothing
-
-        Just issue ->
-            Just issue
-
-
-isReferencing : Issue -> TimeEntry -> Bool
+isReferencing : Maybe Issue -> TimeEntry -> Bool
 isReferencing issue entry =
-    String.contains (toString issue.id) entry.description
+    case issue of
+        Nothing -> False
+        Just issue -> entry.description |> String.contains (issue.id |> toString)
 
-
-includeTimeEntries : List TimeEntry -> Issue -> ZoupamTask
-includeTimeEntries toggl issue =
+appendTimeEntries : List TimeEntry -> ZoupamTask -> ZoupamTask
+appendTimeEntries newTimeEntries task =
     let
-        entries =
-            Just (List.filter (isReferencing issue) toggl)
+        currentEntries = task.timeEntries |> Maybe.withDefault []
+        relatedNewEntries = newTimeEntries
+            |> List.filter (isReferencing task.issue)
     in
-        ZoupamTask (Just issue) entries
+        { task | timeEntries = Just (currentEntries ++ relatedNewEntries) }
 
 view : Version -> Model -> String -> Html Msg
 view version model togglKey =

@@ -68,8 +68,8 @@ buildRequestParams request =
         ++ (request.rounding |> toString)
 
 
-getDetails : TogglParams -> String -> (Result Http.Error (List TimeEntry) -> msg) -> Cmd msg
-getDetails params key msg =
+getDetails : TogglParams -> Int -> String -> (Result Http.Error (List TimeEntry) -> msg) -> Cmd msg
+getDetails params page key msg =
     let
         context =
             Context "contact@occitech.fr"
@@ -92,6 +92,8 @@ getDetails params key msg =
                     ++ buildContextParams context
                     ++ "&"
                     ++ buildRequestParams params
+                    ++ "&page="
+                    ++ (page |> toString)
             , body = Http.emptyBody
             , expect = Http.expectJson detailsDecoder
             , timeout = Nothing
