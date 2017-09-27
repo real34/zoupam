@@ -5,7 +5,7 @@ import Json.Decode.Extra exposing ((|:))
 import Http
 import String
 import Base64
-
+import Views.TogglSelector exposing (TogglParams)
 
 -- import Base64
 
@@ -19,28 +19,11 @@ type alias TimeEntry =
 
 
 type alias Context =
-    { workspaceId : Int
-    , userAgent : String
+    { userAgent : String
     }
-
-
 
 -- Source: https://github.com/toggl/toggl_api_docs/blob/master/reports.md#request-parameters
 -- NB! Maximum date span (until - since) is one year.
-
-
-type OnOff
-    = On
-    | Off
-
-
-type alias RequestParameters =
-    { projectIds : Maybe (List Int)
-    , clientIds : Maybe (List Int)
-    , since : Maybe String
-    , until : Maybe String
-    , rounding : Maybe OnOff
-    }
 
 
 durationInMinutes : Int -> Float
@@ -57,8 +40,6 @@ buildContextParams : Context -> String
 buildContextParams context =
     "user_agent="
         ++ context.userAgent
-        ++ "&workspace_id="
-        ++ toString context.workspaceId
 
 
 buildIdsListParam : Maybe (List Int) -> String
@@ -69,10 +50,14 @@ buildIdsListParam ids =
         |> String.concat
 
 
-buildRequestParams : RequestParameters -> String
+buildRequestParams : TogglParams -> String
 buildRequestParams request =
-    "project_ids="
+    "workspace_id="
+        ++ toString request.workspaceId
+        ++ "&project_ids="
         ++ buildIdsListParam request.projectIds
+        ++ "&task_ids="
+        ++ buildIdsListParam request.taskIds
         ++ "&client_ids="
         ++ buildIdsListParam request.clientIds
         ++ "&since="
@@ -80,22 +65,14 @@ buildRequestParams request =
         ++ "&until="
         ++ Maybe.withDefault "" request.until
         ++ "&rounding="
-        ++ ((Maybe.withDefault Off request.rounding) |> toString)
+        ++ (request.rounding |> toString)
 
 
-getDetails : String -> (Result Http.Error (List TimeEntry) -> msg) -> Cmd msg
-getDetails key msg =
+getDetails : TogglParams -> String -> (Result Http.Error (List TimeEntry) -> msg) -> Cmd msg
+getDetails params key msg =
     let
         context =
-            Context 127309 "contact@occitech.fr"
-
-        params =
-            RequestParameters
-                (Just [ 45022829 ])
-                Nothing
-                (Just "2017-01-01")
-                Nothing
-                (Just Off)
+            Context "contact@occitech.fr"
 
         request =
             { method = "GET"

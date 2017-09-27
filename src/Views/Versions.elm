@@ -74,16 +74,29 @@ taskLine issue timeEntries =
                 Just entries ->
                     List.foldr billableAccumulator 0 entries
 
+        capitalValue = capitalCalculator estimated issue.doneRatio billableTime
         capital =
-            case capitalCalculator estimated issue.doneRatio billableTime of
+            case capitalValue of
                 Nothing ->
                     " - "
-
                 Just capital ->
                     capital |> formatTime
 
+        cssPriorityClass =
+            case issue.priority of
+                "Immediate" -> "bg-washed-red"
+                "Urgente" -> "bg-washed-red"
+                "Haute" -> "bg-light-yellow"
+                "Basse" -> "bg-light-blue"
+                _ -> "striped--near-white"
+        cssCapitalClass =
+            case capitalValue of
+                Nothing -> ""
+                Just capital ->
+                    if capital >= 0 then "bg-green" else "bg-red"
+
     in
-        tr [ class "striped--near-white" ]
+        tr [ class cssPriorityClass ]
             [ td [ class "pv2 ph3" ] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId), class "link" ] [ text ("#" ++ issueId) ] ]
             , td [ class "pv2 ph3" ] [ issue.subject |> toString |> text]
             , td [ class "pv2 ph3 tr" ] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
@@ -92,7 +105,7 @@ taskLine issue timeEntries =
             , td [ class "pv2 ph3 tr" ] [ used |> formatTime |> text ]
             , td [ class "pv2 ph3 tr" ] [ billableTime |> formatTime |> text ]
             , td [ class "pv2 ph3 tr" ] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
-            , td [ class "pv2 ph3 tr" ] [ capital |> text ]
+            , td [ class ("pv2 ph3 tr " ++ cssCapitalClass) ] [ capital |> text ]
             , td [ class "pv2 ph3" ] [ issue.priority |> text ]
             ]
 

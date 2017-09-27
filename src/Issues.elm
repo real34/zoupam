@@ -1,7 +1,6 @@
 module Issues exposing (..)
 
 import Html exposing (..)
-import Html.Events exposing (onClick)
 import Html.Attributes exposing (class)
 import Http
 import Dict exposing (Dict)
@@ -9,6 +8,7 @@ import RedmineAPI exposing (Issue)
 import TogglAPI exposing (TimeEntry)
 import String
 import Views.Versions
+import Views.TogglSelector
 
 
 type alias ZoupamTask =
@@ -16,9 +16,14 @@ type alias ZoupamTask =
     , timeEntries : Maybe (List TimeEntry)
     }
 
-
 type alias Versions =
-    Dict String (List ZoupamTask)
+    Dict String Version
+
+type alias Version =
+    { name: String
+    , togglParams: Views.TogglSelector.TogglParams
+    , tasks: (List ZoupamTask)
+    }
 
 
 type alias Model =
@@ -30,8 +35,9 @@ type alias Model =
 type Msg
     = GoIssues String String
     | FetchIssuesEnd (Result Http.Error (List Issue))
-    | Zou String String
-    | FetchTogglEnd String (Result Http.Error (List TimeEntry))
+    | Zou String Version
+    | FetchTogglEnd Version (Result Http.Error (List TimeEntry))
+    | DefineUrl Version String
 
 
 init : Model
@@ -56,7 +62,7 @@ update msg model =
                 { model | loading = False } ! []
 
         Zou togglKey version ->
-            model ! [ TogglAPI.getDetails togglKey (FetchTogglEnd version) ]
+            model ! [ TogglAPI.getDetails version.togglParams togglKey (FetchTogglEnd version) ]
 
         FetchTogglEnd _ (Err error) ->
             let
@@ -66,17 +72,31 @@ update msg model =
                 model ! []
 
         FetchTogglEnd version (Ok toggl) ->
-            let
-                issues =
-                    (Maybe.withDefault [] (Dict.get version model.versions))
-                        |> List.filterMap issueIfExists
+            { model | versions = Dict.update version.name
+                (\version ->
+                    case version of
+                        Nothing -> Nothing
+                        Just version ->
+                            let
+                                issues =
+                                    version.tasks
+                                        |> List.filterMap issueIfExists
+                                zoupamTasks =
+                                    List.map (includeTimeEntries toggl) issues
+                                        ++ [ ZoupamTask Nothing (notBindedTimeEntries toggl issues) ]
+                            in
+                                Just { version | tasks = zoupamTasks }
+                )
+                model.versions } ! []
 
-                zoupamTasks =
-                    List.map (includeTimeEntries toggl) issues
-                        ++ [ ZoupamTask Nothing (notBindedTimeEntries toggl issues) ]
-            in
-                { model | versions = Dict.insert version zoupamTasks model.versions } ! []
-
+        DefineUrl version url ->
+            { model | versions = Dict.update version.name
+                (\version ->
+                    case version of
+                        Nothing -> Nothing
+                        Just version -> Just { version | togglParams = url |> Views.TogglSelector.fromUrl }
+                )
+                model.versions } ! []
 
 notBindedTimeEntries : List TimeEntry -> List Issue -> Maybe (List TimeEntry)
 notBindedTimeEntries timeEntries issues =
@@ -128,10 +148,19 @@ issuesToVersions issue dict =
     in
         case existing of
             Nothing ->
-                Dict.insert version.name [ ZoupamTask (Just issue) Nothing ] dict
+                dict
+                |> Dict.insert version.name {
+                    name = version.name,
+                    togglParams = Views.TogglSelector.emptyParams,
+                    tasks = [ ZoupamTask (Just issue) Nothing ]
+                }
 
             Just list ->
-                Dict.insert version.name ((ZoupamTask (Just issue) Nothing) :: list) dict
+                dict
+                |> Dict.insert version.name {
+                    list
+                    | tasks = (ZoupamTask (Just issue) Nothing) :: list.tasks
+                }
 
 
 view : Model -> String -> Html Msg
@@ -141,11 +170,9 @@ view model togglKey =
             case model.loading of
                 False ->
                     div []
-                        (List.map
-                            (\( version, issues ) ->
-                                iterationTableView issues version togglKey
-                            )
-                            (Dict.toList model.versions)
+                        ( model.versions
+                            |> Dict.toList
+                            |> List.map (\(_, version) -> iterationTableView version togglKey)
                         )
 
                 True ->
@@ -153,27 +180,30 @@ view model togglKey =
     in
         result
 
-iterationTableView : List ZoupamTask -> String -> String -> Html Msg
-iterationTableView tasks version togglKey =
+iterationTableView : Version -> String -> Html Msg
+iterationTableView version togglKey =
     let
         taskWithIssue =
-            List.filter (\task ->
+            version.tasks
+            |> List.filter (\task ->
                 case task.issue of
                     Nothing -> False
                     Just _ -> True
-            ) tasks
+            )
 
         unknownTaskIssue =
-            List.head (List.filter (\task ->
+            version.tasks
+            |> List.filter (\task ->
                 case task.issue of
                     Nothing -> True
                     Just _ -> False
-            ) tasks)
+            )
+            |> List.head
     in
 
     div [ class "pa3 ma3 o-40 glow" ]
-        [ h2 [ class "bb" ] [ text version ]
-        , div [ class "fr" ] [ button [ onClick (Zou togglKey version), class "ml3 ph4 pv2 br-pill outline-0" ] [ text "Zou" ] ]
+        [ h2 [ class "bb" ] [ text version.name ]
+        , Views.TogglSelector.view (DefineUrl version) version.togglParams (Zou togglKey version)
         , div [ class "overflow-x-auto" ]
             [ table []
                 [ Views.Versions.tableHeader
