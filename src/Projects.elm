@@ -5,7 +5,7 @@ import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (value, class)
 import RedmineAPI exposing (Projects, Project)
 import Http
-
+import Views.Spinner
 
 type alias Model =
     { projects : Maybe ( Projects )
@@ -47,7 +47,7 @@ update msg model =
                 projects =
                     model.projects
             in
-                { model | loading = True } ! [ RedmineAPI.getProjects redmineKey FetchEnd ]
+                { model | loading = True, selected = Nothing } ! [ RedmineAPI.getProjects redmineKey FetchEnd ]
 
         ProjectSelect projectId ->
             case projectId of
@@ -67,6 +67,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     case model.loading of
+        True ->
+            Views.Spinner.view
         False ->
             case model.projects of
                 Nothing ->
@@ -78,6 +80,3 @@ view model =
                             \( project ) -> option [ project.id |> toString |> value ] [ text project.name ]) projects
                         )
                         ]
-
-        True ->
-            text "CHARGEMENT"

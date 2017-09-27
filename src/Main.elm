@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, style)
 import Configurator exposing (..)
 import Projects
+import Versions
 import Issues
 
 
@@ -19,6 +20,7 @@ main =
 type alias Model =
     { config : Configurator.Config
     , projects : Projects.Model
+    , versions : Versions.Model
     , issues : Issues.Model
     }
 
@@ -29,13 +31,14 @@ init =
         ( initModel, initCmd ) =
             Configurator.init
     in
-        Model initModel Projects.init Issues.init
+        Model initModel Projects.init Versions.init Issues.init
             ! [ Cmd.map UpdateConfig initCmd ]
 
 
 type Msg
     = UpdateConfig Configurator.Msg
     | UpdateProjects Projects.Msg
+    | UpdateVersions Versions.Msg
     | UpdateIssues Issues.Msg
 
 
@@ -73,7 +76,7 @@ update msg model =
                 ( subProjects, subCmd ) =
                     Projects.update msg model.projects
 
-                ( subIssues, subCmdIssues ) =
+                ( subVersions, subCmdVersions ) =
                     case subProjects.selected of
                         Nothing ->
                             ( model, Cmd.none )
@@ -81,12 +84,32 @@ update msg model =
                         Just selected ->
                             update
                                 (selected
+                                    |> Versions.FetchStart (Configurator.getRedmineKey model.config)
+                                    |> UpdateVersions
+                                )
+                                model
+            in
+                { model | projects = subProjects, versions = subVersions.versions } ! [ Cmd.map UpdateProjects subCmd, subCmdVersions ]
+
+        UpdateVersions msg ->
+            let
+                ( subVersions, subCmd ) =
+                    Versions.update msg model.versions
+
+                ( subIssues, subCmdIssues ) =
+                    case subVersions.selected of
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                        Just selected ->
+                            update
+                                (selected.id
                                     |> Issues.GoIssues (Configurator.getRedmineKey model.config)
                                     |> UpdateIssues
                                 )
                                 model
             in
-                { model | projects = subProjects, issues = subIssues.issues } ! [ Cmd.map UpdateProjects subCmd, subCmdIssues ]
+                { model | versions = subVersions, issues = subIssues.issues } ! [ Cmd.map UpdateVersions subCmd, subCmdIssues ]
 
         UpdateIssues msg ->
             let
@@ -103,12 +126,27 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "sans-serif w-90 center" ]
-        [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ("cursor", "default")] ] [ text "Zoupam v3" ]
-        , Configurator.view model.config
-            |> Html.map UpdateConfig
-        , Projects.view model.projects
-            |> Html.map UpdateProjects
-        , Issues.view model.issues (Configurator.getTogglKey model.config)
-            |> Html.map UpdateIssues
-        ]
+    let
+        versionsPart =
+            case model.projects.selected of
+                Nothing -> text ""
+                Just _ ->
+                    Versions.view model.versions
+                   |> Html.map UpdateVersions
+
+        issuesPart =
+            case model.versions.selected of
+                Nothing -> text ""
+                Just version ->
+                    Issues.view version model.issues (Configurator.getTogglKey model.config)
+                    |> Html.map UpdateIssues
+    in
+        div [ class "sans-serif w-90 center" ]
+            [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ("cursor", "default")] ] [ text "Zoupam v3" ]
+            , Configurator.view model.config
+                |> Html.map UpdateConfig
+            , Projects.view model.projects
+                |> Html.map UpdateProjects
+            , versionsPart
+            , issuesPart
+            ]
