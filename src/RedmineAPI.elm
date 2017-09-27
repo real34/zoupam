@@ -20,6 +20,7 @@ type alias Version =
     { id : Int
     , name : String
     , dueOn : Maybe Date
+    , description : String
     }
 type alias Versions =
     List Version
@@ -97,6 +98,7 @@ versionsDecoder =
         |: (field "id" Json.int)
         |: (field "name" Json.string)
         |: (Json.maybe <| field "due_date" Json.Decode.Extra.date)
+        |: (field "description" Json.string)
         |> Json.list
         |> field "versions"
 

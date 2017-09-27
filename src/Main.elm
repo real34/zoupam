@@ -103,7 +103,7 @@ update msg model =
 
                         Just selected ->
                             update
-                                (selected.id
+                                (selected
                                     |> Issues.GoIssues (Configurator.getRedmineKey model.config)
                                     |> UpdateIssues
                                 )

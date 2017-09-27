@@ -23,7 +23,7 @@ type alias Model =
     }
 
 type Msg
-    = GoIssues String Int
+    = GoIssues String Version
     | FetchIssuesEnd (Result Http.Error (List Issue))
     | Zou String Model
     | FetchTogglEnd String Int (Result Http.Error (List TimeEntry))
@@ -37,8 +37,17 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GoIssues redmineKey versionId ->
-            { model | loading = True } ! [ RedmineAPI.getIssues redmineKey versionId FetchIssuesEnd ]
+        GoIssues redmineKey version ->
+            let
+                togglParams = version.description
+                    |> Views.TogglSelector.findReportUrl
+                    |> Maybe.withDefault ""
+                    |> Views.TogglSelector.fromUrl
+            in
+                { model |
+                    loading = True
+                    , togglParams = togglParams
+                } ! [ RedmineAPI.getIssues redmineKey version.id FetchIssuesEnd ]
 
         FetchIssuesEnd (Ok issues) ->
             { model |

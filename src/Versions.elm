@@ -38,6 +38,7 @@ emptyVersion =
         id = -1
         , name = "--- Veuillez sélectionner une version ---"
         , dueOn = Nothing
+        , description = ""
     }
 
 compareVersions : Version -> Version -> Order

@@ -1,4 +1,4 @@
-module Views.TogglSelector exposing (TogglParams, fromUrl, emptyParams, view)
+module Views.TogglSelector exposing (TogglParams, findReportUrl, fromUrl, emptyParams, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -39,6 +39,16 @@ idsOfUrlParamName paramName url =
         |> List.head
       False -> Nothing
 
+findReportUrl : String -> Maybe String
+findReportUrl text =
+  let
+    regex = Regex.regex "(https:\\/\\/toggl.com\\/app\\/reports\\/[\\S]+)"
+  in
+    Regex.find (Regex.AtMost 1) regex text
+      |> List.head
+      |> Maybe.andThen (\match -> List.head match.submatches)
+      |> Maybe.withDefault Nothing
+
 fromUrl : String -> TogglParams
 fromUrl url =
   -- Example: https://toggl.com/app/reports/summary/127309/period/thisYear/projects/34394176/tasks/16196934/billable/both
@@ -76,7 +86,7 @@ view : (String -> msg) -> TogglParams -> msg -> Html msg
 view msg model zou =
     div []
       [ label [] [ text "Lien Toggl" ]
-      , input [ onInput msg, value model.url, class "w-30 pa1" ] []
+      , input [ onInput msg, value model.url, class "w-30 pa1 ml2" ] []
       , button [
             onClick zou,
             class "ml3 ph4 pv2 br-pill outline-0" ] [ text "Zou" ]
