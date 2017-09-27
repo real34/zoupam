@@ -82,8 +82,15 @@ taskLine issue timeEntries =
                 Just capital ->
                     capital |> formatTime
 
+        cssPriorityClass =
+            case issue.priority of
+                "Immediate" -> "bg-washed-red"
+                "Urgente" -> "bg-washed-red"
+                "Haute" -> "bg-light-yellow"
+                "Basse" -> "bg-light-blue"
+                _ -> "striped--near-white"
     in
-        tr [ class "striped--near-white" ]
+        tr [ class cssPriorityClass ]
             [ td [ class "pv2 ph3" ] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId), class "link" ] [ text ("#" ++ issueId) ] ]
             , td [ class "pv2 ph3" ] [ issue.subject |> toString |> text]
             , td [ class "pv2 ph3 tr" ] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
