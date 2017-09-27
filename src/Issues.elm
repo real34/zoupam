@@ -62,7 +62,7 @@ update msg model =
                 { model | loading = False } ! []
 
         Zou togglKey version ->
-            model ! [ TogglAPI.getDetails togglKey (FetchTogglEnd version) ]
+            model ! [ TogglAPI.getDetails version.togglParams togglKey (FetchTogglEnd version) ]
 
         FetchTogglEnd _ (Err error) ->
             let
