@@ -7,6 +7,7 @@ import RedmineAPI exposing (Versions, Version)
 import Http
 import Date
 import Date.Extra
+import Views.Spinner
 
 type alias Model =
     { versions : Maybe Versions
@@ -87,17 +88,16 @@ update msg model =
 view : Model -> Html Msg
 view model =
     case model.loading of
+        True ->
+            Views.Spinner.view
         False ->
             case model.versions of
                 Nothing ->
                     div [] []
 
                 Just versions ->
-                    div [ class "tc" ]
+                    div [ class "tc mt2" ]
                         [ select [ onInput SelectVersion, class "pa2" ] (List.map (
                             \( version ) -> option [ version.id |> toString |> value ] [ text version.name ]) versions
                         )
                         ]
-
-        True ->
-            text "CHARGEMENT"

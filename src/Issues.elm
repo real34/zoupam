@@ -1,14 +1,15 @@
 module Issues exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, href, target)
 import Http
 import Dict exposing (Dict)
-import RedmineAPI exposing (Issue)
+import RedmineAPI exposing (Issue, Version, urlOf)
 import TogglAPI exposing (TimeEntry)
 import String
 import Views.Versions
 import Views.TogglSelector
+import Views.Spinner
 
 
 type alias ZoupamTask =
@@ -115,26 +116,21 @@ includeTimeEntries toggl issue =
     in
         ZoupamTask (Just issue) entries
 
-view : Model -> String -> Html Msg
-view model togglKey =
+view : Version -> Model -> String -> Html Msg
+view version model togglKey =
     let
         result =
             case model.loading of
                 False ->
-                    div [] [
-                        iterationTableView model togglKey
-                    ]
-
+                    div [] [ iterationTableView version model togglKey ]
                 True ->
-                    span [] [ text "CHARGEMENT" ]
+                    Views.Spinner.view
     in
         result
 
-iterationTableView : Model -> String -> Html Msg
-iterationTableView model togglKey =
+iterationTableView : Version -> Model -> String -> Html Msg
+iterationTableView version model togglKey =
     let
-        versionName = "TODO"
-
         taskWithIssue =
             model.tasks
             |> List.filter (\task ->
@@ -154,7 +150,12 @@ iterationTableView model togglKey =
     in
 
     div [ class "pa3 ma3" ]
-        [ h2 [ class "bb" ] [ text versionName ]
+        [ h2 [ class "bb" ]
+            [ a [ href (urlOf version), target "_blank", class "link"]
+                [ text version.name
+                , i [ class "fa fa-external-link ml2"] []
+                ]
+            ]
         , Views.TogglSelector.view DefineUrl model.togglParams (Zou togglKey model)
         , div [ class "overflow-x-auto" ]
             [ table []

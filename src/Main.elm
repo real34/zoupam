@@ -126,14 +126,27 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "sans-serif w-90 center" ]
-        [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ("cursor", "default")] ] [ text "Zoupam v3" ]
-        , Configurator.view model.config
-            |> Html.map UpdateConfig
-        , Projects.view model.projects
-            |> Html.map UpdateProjects
-        , Versions.view model.versions
-            |> Html.map UpdateVersions
-        , Issues.view model.issues (Configurator.getTogglKey model.config)
-            |> Html.map UpdateIssues
-        ]
+    let
+        versionsPart =
+            case model.projects.selected of
+                Nothing -> text ""
+                Just _ ->
+                    Versions.view model.versions
+                   |> Html.map UpdateVersions
+
+        issuesPart =
+            case model.versions.selected of
+                Nothing -> text ""
+                Just version ->
+                    Issues.view version model.issues (Configurator.getTogglKey model.config)
+                    |> Html.map UpdateIssues
+    in
+        div [ class "sans-serif w-90 center" ]
+            [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ("cursor", "default")] ] [ text "Zoupam v3" ]
+            , Configurator.view model.config
+                |> Html.map UpdateConfig
+            , Projects.view model.projects
+                |> Html.map UpdateProjects
+            , versionsPart
+            , issuesPart
+            ]

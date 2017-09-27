@@ -33,6 +33,9 @@ type alias Project =
 type alias Projects =
     List Project
 
+urlOf : Version -> String
+urlOf version =
+    redmineUrl ++ "/versions/" ++ (version.id |> toString)
 
 redmineUrl : String
 redmineUrl =
