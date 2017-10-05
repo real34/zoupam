@@ -42,6 +42,7 @@ idsOfUrlParamName paramName url =
 findReportUrl : String -> Maybe String
 findReportUrl text =
   let
+    -- TODO Support urls with www prefix (Mission for a regexman)
     regex = Regex.regex "(https:\\/\\/toggl.com\\/app\\/reports\\/[\\S]+)"
   in
     Regex.find (Regex.AtMost 1) regex text
