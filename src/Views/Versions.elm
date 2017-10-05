@@ -19,16 +19,9 @@ unknownTaskLine : TimeEntry -> Html msg
 unknownTaskLine entry =
         tr [ class "striped--near-white" ]
             [ td [ class "pv2 ph3" ] [ entry.description |> text ]
-            , td [ class "pv2 ph3 tr" ] [ otherTimeEntryTogglTime entry ]
+            , td [ class "pv2 ph3 tr" ] [ entry.duration |> toFloat |> formatTime |> text ]
             , td [ class "pv2 ph3 tr" ] [ billableAccumulator entry 0 |> formatTime |> text ]
             ]
-
-otherTimeEntryTogglTime : TimeEntry -> Html msg
-otherTimeEntryTogglTime entry  =
- entry.duration
-            |> TogglAPI.durationInMinutes
-            |> roundedAtTwoDigitAfterComma
-            |> text
 
 tableHeader : Html msg
 tableHeader =
