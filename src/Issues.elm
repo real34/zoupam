@@ -77,9 +77,21 @@ update msg model =
         FetchTogglEnd togglKey page (Ok togglTimeEntries) ->
             let
                 tasksWithIssue = model.tasks |> List.filter (\task -> task.issue /= Nothing)
+                firstTaskWithoutIssue = model.tasks
+                    |> List.filter (\task -> task.issue == Nothing)
+                    |> List.head
+                    |> Maybe.withDefault (ZoupamTask Nothing (Just []))
+
+                unbindedTimeEntries = notBindedTimeEntries togglTimeEntries tasksWithIssue
                 zoupamTasks =
                     (tasksWithIssue |> List.map (appendTimeEntries togglTimeEntries))
-                        ++ [ ZoupamTask Nothing (notBindedTimeEntries togglTimeEntries tasksWithIssue) ]
+                        ++ [ {
+                            firstTaskWithoutIssue
+                            | timeEntries =
+                                case firstTaskWithoutIssue.timeEntries of
+                                    Nothing -> Just unbindedTimeEntries
+                                    Just timeEntries -> Just (timeEntries ++ unbindedTimeEntries)
+                        } ]
 
                 -- Keep fetching new pages for other time entries while we won!
                 nextPage = page + 1
@@ -97,19 +109,16 @@ resetTimeEntries : ZoupamTask -> ZoupamTask
 resetTimeEntries task =
     { task | timeEntries = Nothing }
 
-notBindedTimeEntries : List TimeEntry -> List ZoupamTask -> Maybe (List TimeEntry)
+notBindedTimeEntries : List TimeEntry -> List ZoupamTask -> List TimeEntry
 notBindedTimeEntries timeEntries tasks =
-    (Just
-        (List.filter
+    timeEntries
+        |> List.filter
             (\entry ->
                 List.foldr
                     (\task acc -> acc && not (isReferencing task.issue entry))
                     True
                     tasks
             )
-            timeEntries
-        )
-    )
 
 isReferencing : Maybe Issue -> TimeEntry -> Bool
 isReferencing issue entry =
