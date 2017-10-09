@@ -85,10 +85,22 @@ emptyParams =
 
 view : (String -> msg) -> TogglParams -> msg -> Html msg
 view msg model zou =
+  let
+    previewLink =
+      case model.url of
+        "" -> text ""
+        url -> a [ href url
+                  , target "_blank"
+                  , class "link"
+                  , title "Ouvrir le rapport dans une autre fenêtre"
+                  ] [ i [ class "fa fa-external-link ml2"] [] ]
+  in
     div []
-      [ label [] [ text "Lien Toggl" ]
+      [ label [] [ i [ class "fa fa-power-off white bg-red pa2 br-100", title "Url du rapport Toggl"] [] ]
       , input [ onInput msg, value model.url, class "w-30 pa1 ml2" ] []
+      , previewLink
       , button [
             onClick zou,
-            class "ml3 ph4 pv2 br-pill outline-0" ] [ text "Zou" ]
+            class "ml3 ph4 pv2 br-pill outline-0"
+        ] [ i [ class "fa fa-hand-spock-o mr2"] [], text "Zou" ]
       ]
