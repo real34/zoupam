@@ -9,6 +9,7 @@ import Date
 import Date.Extra
 import Views.Spinner
 
+
 type alias Model =
     { versions : Maybe Versions
     , selected : Maybe Version
@@ -20,7 +21,7 @@ type alias Model =
 type Msg
     = SelectVersion String
     | FetchStart String String
-    | FetchEnd (Result Http.Error (Versions))
+    | FetchEnd (Result Http.Error Versions)
 
 
 init : Model
@@ -34,19 +35,21 @@ init =
 
 emptyVersion : Version
 emptyVersion =
-    {
-        id = -1
-        , name = "--- Veuillez sélectionner une version ---"
-        , dueOn = Nothing
-        , description = ""
+    { id = -1
+    , name = "--- Veuillez sélectionner une version ---"
+    , dueOn = Nothing
+    , description = ""
     }
+
 
 compareVersions : Version -> Version -> Order
 compareVersions v1 v2 =
     let
-        withOldDefault = Maybe.withDefault (Date.Extra.fromCalendarDate 1942 Date.Jan 1)
+        withOldDefault =
+            Maybe.withDefault (Date.Extra.fromCalendarDate 1942 Date.Jan 1)
     in
         Date.Extra.compare (v1.dueOn |> withOldDefault) (v2.dueOn |> withOldDefault)
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -56,29 +59,38 @@ update msg model =
 
         SelectVersion versionValue ->
             let
-                versionId = versionValue |> String.toInt |> Result.withDefault -1
+                versionId =
+                    versionValue |> String.toInt |> Result.withDefault -1
             in
                 case versionId of
-                    -1 ->
+                    (-1) ->
                         { model | selected = Nothing } ! []
+
                     _ ->
                         let
                             isVersion : Version -> Bool
-                            isVersion version = version.id == versionId
+                            isVersion version =
+                                version.id == versionId
                         in
-                            { model | selected =
-                                case model.versions of
-                                    Nothing -> Nothing
-                                    Just versions -> versions
-                                        |> List.filter isVersion
-                                        |> List.head
-                            } ! []
+                            { model
+                                | selected =
+                                    case model.versions of
+                                        Nothing ->
+                                            Nothing
+
+                                        Just versions ->
+                                            versions
+                                                |> List.filter isVersion
+                                                |> List.head
+                            }
+                                ! []
 
         FetchEnd (Ok fetchedVersions) ->
             let
-                versions = fetchedVersions
-                    |> List.sortWith compareVersions
-                    |> List.reverse
+                versions =
+                    fetchedVersions
+                        |> List.sortWith compareVersions
+                        |> List.reverse
             in
                 { model | loading = False, versions = Just (emptyVersion :: versions) } ! []
 
@@ -91,6 +103,7 @@ view model =
     case model.loading of
         True ->
             Views.Spinner.view
+
         False ->
             case model.versions of
                 Nothing ->
@@ -98,7 +111,9 @@ view model =
 
                 Just versions ->
                     div [ class "tc mt2" ]
-                        [ select [ onInput SelectVersion, class "pa2" ] (List.map (
-                            \( version ) -> option [ version.id |> toString |> value ] [ text version.name ]) versions
-                        )
+                        [ select [ onInput SelectVersion, class "pa2" ]
+                            (List.map
+                                (\version -> option [ version.id |> toString |> value ] [ text version.name ])
+                                versions
+                            )
                         ]

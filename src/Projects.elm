@@ -7,8 +7,9 @@ import RedmineAPI exposing (Projects, Project)
 import Http
 import Views.Spinner
 
+
 type alias Model =
-    { projects : Maybe ( Projects )
+    { projects : Maybe Projects
     , selected : Maybe String
     , loading : Bool
     , redmineKey : String
@@ -18,7 +19,7 @@ type alias Model =
 type Msg
     = ProjectSelect String
     | FetchStart String
-    | FetchEnd (Result Http.Error (Projects))
+    | FetchEnd (Result Http.Error Projects)
 
 
 init : Model
@@ -32,10 +33,9 @@ init =
 
 emptyProject : Project
 emptyProject =
-    {
-        id = -1
-        , name = "--- Veuillez sélectionner un projet ---"
-        , status = 1
+    { id = -1
+    , name = "--- Veuillez sélectionner un projet ---"
+    , status = 1
     }
 
 
@@ -69,6 +69,7 @@ view model =
     case model.loading of
         True ->
             Views.Spinner.view
+
         False ->
             case model.projects of
                 Nothing ->
@@ -76,7 +77,9 @@ view model =
 
                 Just projects ->
                     div [ class "tc" ]
-                        [ select [ onInput ProjectSelect, class "pa2" ] (List.map (
-                            \( project ) -> option [ project.id |> toString |> value ] [ text project.name ]) projects
-                        )
+                        [ select [ onInput ProjectSelect, class "pa2" ]
+                            (List.map
+                                (\project -> option [ project.id |> toString |> value ] [ text project.name ])
+                                projects
+                            )
                         ]

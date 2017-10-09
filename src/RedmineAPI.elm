@@ -5,6 +5,7 @@ import Json.Decode as Json exposing (field)
 import Json.Decode.Extra exposing ((|:), withDefault)
 import Date exposing (Date)
 
+
 type alias Issue =
     { id : Int
     , description : String
@@ -22,8 +23,11 @@ type alias Version =
     , dueOn : Maybe Date
     , description : String
     }
+
+
 type alias Versions =
     List Version
+
 
 type alias Project =
     { id : Int
@@ -31,20 +35,25 @@ type alias Project =
     , status : Int
     }
 
+
 type alias Projects =
     List Project
+
 
 urlOf : Version -> String
 urlOf version =
     redmineUrl ++ "/versions/" ++ (version.id |> toString)
 
+
 redmineUrl : String
 redmineUrl =
     "https://projets.occitech.fr"
 
+
 isActiveProject : Project -> Bool
 isActiveProject project =
     project.status == 1
+
 
 getProjects : String -> (Result Http.Error Projects -> msg) -> Cmd msg
 getProjects key msg =
@@ -57,6 +66,7 @@ getProjects key msg =
     in
         Http.send msg <| Http.get url projectsDecoder
 
+
 getVersions : String -> String -> (Result Http.Error (List Version) -> msg) -> Cmd msg
 getVersions key projectId msg =
     let
@@ -68,6 +78,7 @@ getVersions key projectId msg =
                 ++ key
     in
         Http.send msg <| Http.get url versionsDecoder
+
 
 getIssues : String -> Int -> (Result Http.Error (List Issue) -> msg) -> Cmd msg
 getIssues key versionId msg =
@@ -92,6 +103,7 @@ projectsDecoder =
         |> Json.list
         |> field "projects"
 
+
 versionsDecoder : Json.Decoder (List Version)
 versionsDecoder =
     Json.succeed Version
@@ -101,6 +113,7 @@ versionsDecoder =
         |: (field "description" Json.string)
         |> Json.list
         |> field "versions"
+
 
 issuesDecoder : Json.Decoder (List Issue)
 issuesDecoder =

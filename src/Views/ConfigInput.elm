@@ -11,6 +11,7 @@ type alias Field =
     , value : String
     }
 
+
 view : (String -> msg) -> Html msg -> Field -> Html msg
 view msg helpAPI field =
     div []

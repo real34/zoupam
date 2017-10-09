@@ -7,6 +7,7 @@ import String
 import Base64
 import Views.TogglSelector exposing (TogglParams)
 
+
 -- import Base64
 
 
@@ -21,6 +22,8 @@ type alias TimeEntry =
 type alias Context =
     { userAgent : String
     }
+
+
 
 -- Source: https://github.com/toggl/toggl_api_docs/blob/master/reports.md#request-parameters
 -- NB! Maximum date span (until - since) is one year.

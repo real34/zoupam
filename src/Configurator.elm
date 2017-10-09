@@ -79,23 +79,36 @@ subscriptions : Sub Msg
 subscriptions =
     getStoredConfig StoredKeys
 
+
 helpRedmineAPI : Html msg
-helpRedmineAPI = p [ class "lh-copy bg-near-white f6 pa2" ] [text "Votre clé API Redmine est accessible depuis "
-       , a [href "http://projets.occitech.fr/my/account", class "link"][text "votre compte Redmine"]
-       , text ", pour obtenir votre clé il suffit de cliquer sur 'Afficher' en dessous de 'Clé d'accès API' (qui se situe à droite de l'écran)."]
+helpRedmineAPI =
+    p [ class "lh-copy bg-near-white f6 pa2" ]
+        [ text "Votre clé API Redmine est accessible depuis "
+        , a [ href "http://projets.occitech.fr/my/account", class "link" ] [ text "votre compte Redmine" ]
+        , text ", pour obtenir votre clé il suffit de cliquer sur 'Afficher' en dessous de 'Clé d'accès API' (qui se situe à droite de l'écran)."
+        ]
+
 
 helpTogglAPI : Html msg
-helpTogglAPI = p [ class "lh-copy bg-near-white f6 pa2" ] [text "Votre clé API Toggl est accessible depuis "
-       , a [href "https://toggl.com/app/profile", class "link"][text "votre profil Toggl."]]
+helpTogglAPI =
+    p [ class "lh-copy bg-near-white f6 pa2" ]
+        [ text "Votre clé API Toggl est accessible depuis "
+        , a [ href "https://toggl.com/app/profile", class "link" ] [ text "votre profil Toggl." ]
+        ]
+
 
 view : Config -> Html Msg
 view config =
     div [ class "mb5" ]
-        [ div [ class "mb4"] [ getRedmineKey config
-            |> ConfigInput.Field redmineKey "Insérez votre clé API Redmine: "
-            |> ConfigInput.view (UpdateConfig redmineKey) (helpRedmineAPI) ]
-        , div [ class "mb4"] [ Dict.get togglKey config
-            |> Maybe.withDefault ""
-            |> ConfigInput.Field togglKey "Insérez votre clé API Toggl: "
-            |> ConfigInput.view (UpdateConfig togglKey) helpTogglAPI ]
+        [ div [ class "mb4" ]
+            [ getRedmineKey config
+                |> ConfigInput.Field redmineKey "Insérez votre clé API Redmine: "
+                |> ConfigInput.view (UpdateConfig redmineKey) (helpRedmineAPI)
+            ]
+        , div [ class "mb4" ]
+            [ Dict.get togglKey config
+                |> Maybe.withDefault ""
+                |> ConfigInput.Field togglKey "Insérez votre clé API Toggl: "
+                |> ConfigInput.view (UpdateConfig togglKey) helpTogglAPI
+            ]
         ]
