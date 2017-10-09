@@ -106,8 +106,7 @@ view config =
                 |> ConfigInput.view (UpdateConfig redmineKey) (helpRedmineAPI)
             ]
         , div [ class "mb4" ]
-            [ Dict.get togglKey config
-                |> Maybe.withDefault ""
+            [ getTogglKey config
                 |> ConfigInput.Field togglKey "Insérez votre clé API Toggl: "
                 |> ConfigInput.view (UpdateConfig togglKey) helpTogglAPI
             ]
