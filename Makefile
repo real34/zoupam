@@ -16,8 +16,10 @@ test: ## Launch tests
 build: ## Compile js
 	docker-compose run --rm elm run build
 
-lint: ## Make a lint pass
-	# docker-compose run --rm npm run lint
+lint: ## Make a lint check
+	docker-compose run --rm elm run lint
+format: ## Format all the code!
+	docker-compose run --rm elm run format
 
 deploy_prod: build ## Deploy prod
 	@ echo "Deploying to " $$DEPLOYMENT_TARGET_PATH

@@ -9,8 +9,9 @@ stage('Checkout') {
 
 stage('Test') {
     node {
-        echo 'Testing the code'
+        echo 'Testing the code and linting'
         sh 'make install'
+        sh 'make lint'
         sh 'make test'
     }
 }
