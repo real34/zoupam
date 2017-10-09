@@ -95,12 +95,20 @@ taskLine issue timeEntries =
             , td [ class "pv2 ph3 tr" ] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
             , td [ class "pv2 ph3 tr" ] [ issue.doneRatio |> toString |> text ]
             , td [ class "pv2 ph3" ] [ text issue.status ]
-            , td [ class "pv2 ph3 tr" ] [ used |> formatTime |> text ]
-            , td [ class "pv2 ph3 tr" ] [ billableTime |> formatTime |> text ]
+            , td [ class "pv2 ph3 tr" ] [ used |> formatTime |> (togglReportLinkForTask issueId "both") ]
+            , td [ class "pv2 ph3 tr" ] [ billableTime |> formatTime |> (togglReportLinkForTask issueId "yes") ]
             , td [ class "pv2 ph3 tr" ] [ (timeLeftCalculator estimated billableTime) |> formatTime |> text ]
             , td [ class ("pv2 ph3 tr " ++ cssCapitalClass) ] [ capital |> text ]
             , td [ class "pv2 ph3" ] [ issue.priority |> text ]
             ]
+
+togglReportLinkForTask : String -> String -> String -> Html msg
+togglReportLinkForTask issueId billableType linkText =
+    a [target "_blank"
+    , href ("https://toggl.com/app/reports/detailed/127309/period/thisYear/description/%23" ++ issueId ++ "/billable/" ++ billableType)
+    , class "link"
+    , alt ("Voir les entrées Toggl pour l'issue " ++ issueId)
+    ] [ linkText |> text, i [ class "fa fa-external-link ml2"] [] ]
 
 billableAccumulator : TimeEntry -> Float -> Float
 billableAccumulator timeEntry acc =
