@@ -1,4 +1,4 @@
-port module Configurator exposing (Config, update, view, init, subscriptions, Msg, getRedmineKey, getTogglKey)
+port module Configurator exposing (Config, update, view, init, isComplete, subscriptions, Msg, getRedmineKey, getTogglKey)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -55,6 +55,15 @@ getTogglKey config =
         |> Maybe.withDefault ""
 
 
+isComplete : Config -> Bool
+isComplete config =
+    Maybe.map2
+        (\cfgRedmine -> \cfgToggl -> cfgRedmine /= "" && cfgToggl /= "")
+        (Dict.get redmineKey config)
+        (Dict.get togglKey config)
+        |> Maybe.withDefault False
+
+
 type Msg
     = UpdateConfig String String
     | StoredKeys StoredConfig
@@ -100,7 +109,8 @@ helpTogglAPI =
 view : Config -> Html Msg
 view config =
     div [ class "mb5" ]
-        [ div [ class "mb4" ]
+        [ h2 [] [ text "Configurez l'application" ]
+        , div [ class "mb4" ]
             [ getRedmineKey config
                 |> ConfigInput.Field redmineKey "Insérez votre clé API Redmine: "
                 |> ConfigInput.view (UpdateConfig redmineKey) (helpRedmineAPI)

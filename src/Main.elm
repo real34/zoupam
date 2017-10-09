@@ -1,7 +1,8 @@
 module Main exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, style)
+import Html.Attributes exposing (class, style, href, title)
+import Html.Events exposing (onClick)
 import Configurator exposing (..)
 import Projects
 import Versions
@@ -19,6 +20,7 @@ main =
 
 type alias Model =
     { config : Configurator.Config
+    , configOpened : Bool
     , projects : Projects.Model
     , versions : Versions.Model
     , issues : Issues.Model
@@ -31,12 +33,13 @@ init =
         ( initModel, initCmd ) =
             Configurator.init
     in
-        Model initModel Projects.init Versions.init Issues.init
+        Model initModel False Projects.init Versions.init Issues.init
             ! [ Cmd.map UpdateConfig initCmd ]
 
 
 type Msg
     = UpdateConfig Configurator.Msg
+    | ToggleConfigOpened
     | UpdateProjects Projects.Msg
     | UpdateVersions Versions.Msg
     | UpdateIssues Issues.Msg
@@ -49,6 +52,9 @@ update msg model =
             let
                 ( subConfig, subCmd ) =
                     Configurator.update msg model.config
+
+                isConfigNeeded =
+                    not (Configurator.isComplete subConfig)
 
                 oldRedmineKey =
                     Configurator.getRedmineKey model.config
@@ -69,7 +75,10 @@ update msg model =
                                     )
                                     model
             in
-                { model | config = subConfig, projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
+                { model | config = subConfig, configOpened = isConfigNeeded, projects = subProjects.projects } ! [ Cmd.map UpdateConfig subCmd, subCmdProjects ]
+
+        ToggleConfigOpened ->
+            { model | configOpened = not model.configOpened } ! []
 
         UpdateProjects msg ->
             let
@@ -128,6 +137,15 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     let
+        configuratorPart =
+            case model.configOpened of
+                False ->
+                    text ""
+
+                True ->
+                    Configurator.view model.config
+                        |> Html.map UpdateConfig
+
         versionsPart =
             case model.projects.selected of
                 Nothing ->
@@ -148,8 +166,8 @@ view model =
     in
         div [ class "sans-serif w-90 center" ]
             [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ( "cursor", "default" ) ] ] [ text "Zoupam v3" ]
-            , Configurator.view model.config
-                |> Html.map UpdateConfig
+            , a [ href "#", title "Afficher / cacher la configuration", class "link ml3 moon-gray f3 dim", onClick ToggleConfigOpened ] [ i [ class "fa fa-cog" ] [] ]
+            , configuratorPart
             , Projects.view model.projects
                 |> Html.map UpdateProjects
             , versionsPart
