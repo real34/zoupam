@@ -165,7 +165,7 @@ view model =
                         |> Html.map UpdateIssues
     in
         div [ class "sans-serif w-90 center" ]
-            [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ( "cursor", "default" ) ] ] [ text "Zoupam v3" ]
+            [ h1 [ class "pv3 hover-ph1 hover-dark-red dib grow", style [ ( "cursor", "default" ) ], title "🎶 “Avec le temps, va, tout s'en va ...” - Léo Ferré" ] [ text "Zoupam v3" ]
             , a [ href "#", title "Afficher / cacher la configuration", class "link ml3 moon-gray f3 dim", onClick ToggleConfigOpened ] [ i [ class "fa fa-cog" ] [] ]
             , configuratorPart
             , Projects.view model.projects
