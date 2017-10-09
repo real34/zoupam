@@ -2,7 +2,7 @@ module Projects exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Html.Attributes exposing (value, class)
+import Html.Attributes exposing (value, class, autofocus)
 import RedmineAPI exposing (Projects, Project)
 import Http
 import Views.Spinner
@@ -77,7 +77,7 @@ view model =
 
                 Just projects ->
                     div [ class "tc" ]
-                        [ select [ onInput ProjectSelect, class "pa2" ]
+                        [ select [ onInput ProjectSelect, class "pa2", autofocus True ]
                             (List.map
                                 (\project -> option [ project.id |> toString |> value ] [ text project.name ])
                                 projects
