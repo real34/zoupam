@@ -21,7 +21,7 @@ lint: ## Make a lint check
 format: ## Format all the code!
 	docker-compose run --rm elm run format
 
-deploy_prod: build ## Deploy prod
+deploy_prod: install build ## Deploy prod
 	@ echo "Deploying to " $$DEPLOYMENT_TARGET_PATH
 	@rsync -avzL --delete dist/ $$DEPLOYMENT_TARGET_PATH
 
