@@ -110,8 +110,8 @@ view model =
                     div [] []
 
                 Just versions ->
-                    div [ class "tc mt2" ]
-                        [ select [ onInput SelectVersion, class "pa2" ]
+                    div [ class "mt2" ]
+                        [ select [ onInput SelectVersion, class "pa2 w-100" ]
                             (List.map
                                 (\version -> option [ version.id |> toString |> value ] [ text version.name ])
                                 versions

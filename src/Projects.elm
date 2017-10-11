@@ -76,8 +76,8 @@ view model =
                     div [] []
 
                 Just projects ->
-                    div [ class "tc" ]
-                        [ select [ onInput ProjectSelect, class "pa2", autofocus True ]
+                    div []
+                        [ select [ onInput ProjectSelect, class "pa2 w-100", autofocus True ]
                             (List.map
                                 (\project -> option [ project.id |> toString |> value ] [ text project.name ])
                                 projects
