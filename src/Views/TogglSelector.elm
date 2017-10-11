@@ -124,8 +124,8 @@ view msg model zou =
                         [ i [ class "fa fa-external-link ml2" ] [] ]
     in
         div []
-            [ label [] [ i [ class "fa fa-power-off white bg-red pa2 br-100", title "Url du rapport Toggl" ] [] ]
-            , input [ onInput msg, value model.url, class "w-30 pa1 ml2" ] []
+            [ label [] [ i [ class "fa fa-power-off white bg-red pa2 br-100 o-30", title "Url du rapport Toggl" ] [] ]
+            , input [ onInput msg, value model.url, class "w-30 pa1 ml2 bb bt-0 bl-0 br-0 b--moon-gray outline-0" ] []
             , previewLink
             , button
                 [ onClick zou

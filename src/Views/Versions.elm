@@ -130,10 +130,10 @@ togglReportLinkForTask issueId billableType linkText =
     a
         [ target "_blank"
         , href ("https://toggl.com/app/reports/detailed/127309/period/thisYear/description/%23" ++ issueId ++ "/billable/" ++ billableType)
-        , class "link"
+        , class "link hide-child"
         , alt ("Voir les entrées Toggl pour l'issue " ++ issueId)
         ]
-        [ linkText |> text, i [ class "fa fa-external-link ml2" ] [] ]
+        [ i [ class "fa fa-external-link mr2 child" ] [], linkText |> text ]
 
 
 billableAccumulator : TimeEntry -> Float -> Float

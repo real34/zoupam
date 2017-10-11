@@ -210,9 +210,9 @@ iterationTableView version model togglKey =
     in
         div [ class "pa3 ma3" ]
             [ h2 [ class "bb" ]
-                [ a [ href (urlOf version), target "_blank", class "link" ]
+                [ a [ href (urlOf version), target "_blank", class "link hide-child" ]
                     [ text version.name
-                    , i [ class "fa fa-external-link ml2" ] []
+                    , i [ class "fa fa-external-link ml2 child" ] []
                     ]
                 ]
             , Views.TogglSelector.view DefineUrl model.togglParams (Zou togglKey model)
