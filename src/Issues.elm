@@ -208,7 +208,7 @@ iterationTableView version model togglKey =
                     )
                 |> List.head
     in
-        div [ class "pa3 ma3" ]
+        div [ class "mt5 mb3" ]
             [ h2 [ class "bb" ]
                 [ a [ href (urlOf version), target "_blank", class "link hide-child" ]
                     [ text version.name
