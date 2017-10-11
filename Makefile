@@ -24,7 +24,7 @@ format: ## Format all the code!
 
 deploy_prod: build ## Deploy prod
 	@ echo "Deploying to " $$DEPLOYMENT_TARGET_PATH
-	@rsync -avzL --delete dist/ $$DEPLOYMENT_TARGET_PATH
+	rsync -avzL --delete dist/ $$DEPLOYMENT_TARGET_PATH
 
 # Automatic documentation. See http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 .PHONY: help
