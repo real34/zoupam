@@ -21,7 +21,7 @@ stage('Deploy') {
         if (BRANCH_NAME=='master') {
             withCredentials([string(credentialsId: 'DEPLOYMENT_PROD_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH')]) {
                 echo 'Build project and deploy it live'
-                sh 'make deploy_prod'
+                sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH make deploy_prod'
             }
         } else {
             withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
