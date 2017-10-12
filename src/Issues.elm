@@ -1,7 +1,7 @@
 module Issues exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, href, target)
+import Html.Attributes exposing (class, href, target, style)
 import Http
 import RedmineAPI exposing (Issue, Version, urlOf)
 import TogglAPI exposing (TimeEntry)
@@ -209,13 +209,15 @@ iterationTableView version model togglKey =
                 |> List.head
     in
         div [ class "mt5 mb3" ]
-            [ h2 [ class "bb" ]
-                [ a [ href (urlOf version), target "_blank", class "link hide-child" ]
-                    [ text version.name
-                    , i [ class "fa fa-external-link ml2 child" ] []
+            [ div [ class "mb3 flex items-center justify-between" ]
+                [ h2 [ class "mr3", style [ ( "flex-grow", "0" ) ] ]
+                    [ a [ href (urlOf version), target "_blank", class "link hide-child" ]
+                        [ text version.name
+                        , i [ class "fa fa-external-link ml2 child" ] []
+                        ]
                     ]
+                , Views.TogglSelector.view [ style [ ( "flex-grow", "1" ) ] ] DefineUrl model.togglParams (Zou togglKey model)
                 ]
-            , Views.TogglSelector.view DefineUrl model.togglParams (Zou togglKey model)
             , div [ class "overflow-x-auto" ]
                 [ table []
                     [ Views.Versions.tableHeader

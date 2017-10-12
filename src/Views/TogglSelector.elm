@@ -106,8 +106,8 @@ emptyParams =
     }
 
 
-view : (String -> msg) -> TogglParams -> msg -> Html msg
-view msg model zou =
+view : List (Attribute msg) -> (String -> msg) -> TogglParams -> msg -> Html msg
+view attributes msg model zou =
     let
         previewLink =
             case model.url of
@@ -123,9 +123,9 @@ view msg model zou =
                         ]
                         [ i [ class "fa fa-external-link ml2" ] [] ]
     in
-        div []
+        div attributes
             [ label [] [ i [ class "fa fa-power-off white bg-red pa2 br-100 o-30", title "Url du rapport Toggl" ] [] ]
-            , input [ onInput msg, value model.url, class "w-30 pa1 ml2 bb bt-0 bl-0 br-0 b--moon-gray outline-0" ] []
+            , input [ onInput msg, value model.url, class "w-40 pa1 ml2 bb bt-0 bl-0 br-0 b--moon-gray outline-0" ] []
             , previewLink
             , button
                 [ onClick zou
