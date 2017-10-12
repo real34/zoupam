@@ -110,8 +110,29 @@ taskLine issue timeEntries =
                         "bg-green"
                     else
                         "bg-red"
+
+        cssStatusClass =
+            let
+                doneClass =
+                    "o-60"
+            in
+                case issue.status of
+                    "Validation interne" ->
+                        doneClass
+
+                    "Validation client" ->
+                        doneClass
+
+                    "Validée" ->
+                        doneClass
+
+                    "Rejetée" ->
+                        doneClass
+
+                    _ ->
+                        ""
     in
-        tr [ class cssPriorityClass ]
+        tr [ class (cssPriorityClass ++ " " ++ cssStatusClass) ]
             [ td [ class "pv2 ph3" ] [ a [ target "_blank", href ("https://projets.occitech.fr/issues/" ++ issueId), class "link" ] [ text ("#" ++ issueId) ] ]
             , td [ class "pv2 ph3" ] [ issue.subject |> toString |> text ]
             , td [ class "pv2 ph3 tr" ] [ estimated |> roundedAtTwoDigitAfterComma |> text ]
