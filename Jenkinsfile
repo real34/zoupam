@@ -29,7 +29,8 @@ stage('Deploy') {
             sshagent(['DEPLOYMENT_FEATURE_SSH_AGENT']) {
                 withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
                     echo 'Build project and deploy it in a feature branch'
-                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/$(basename ${BRANCH_NAME}) make deploy_prod'
+                    def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/${FEATURE_NAME} make deploy_prod'
                 }
             }
         }
@@ -37,13 +38,15 @@ stage('Deploy') {
 }
 
 stage('Validation') {
-    if (BRANCH_NAME=='master') {
-        echo 'Rien à faire, cela a été validé sur la branche ...'
-    } else {
-        milestone()
-        env.URI=sh 'basename ${BRANCH_NAME}'
-        input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/"${env.URI}" ?", ok: 'Je valide !'
-        milestone()
+    node {
+        if (BRANCH_NAME=='master') {
+            echo 'Rien à faire, cela a été validé sur la branche ...'
+        } else {
+            milestone()
+            def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+            input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/${FEATURE_NAME}?", ok: 'Je valide !'
+            milestone()
+        }
     }
 }
 
@@ -58,7 +61,8 @@ stage('Cleanup') {
                     // TODO Find a way to remove the empty directory.
                     // I had issues doing it with the user@host:base/path DEPLOYMENT_TARGET_PATH_BASE value,
                     // maybe splitting it in two variables (hostname and base path) is the only solution...
-                    sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/$(basename ${BRANCH_NAME})'
+                    def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+                    sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/${FEATURE_NAME}'
                 }
             }
         }
