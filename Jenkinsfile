@@ -41,7 +41,8 @@ stage('Validation') {
         echo 'Rien à faire, cela a été validé sur la branche ...'
     } else {
         milestone()
-        input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/$(basename ${BRANCH_NAME}) ?", ok: 'Je valide !'
+        URI=sh(basename ${BRANCH_NAME})
+        input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/" + URI + " ?", ok: 'Je valide !'
         milestone()
     }
 }
