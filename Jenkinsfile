@@ -29,7 +29,7 @@ stage('Deploy') {
             sshagent(['DEPLOYMENT_FEATURE_SSH_AGENT']) {
                 withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
                     echo 'Build project and deploy it in a feature branch'
-                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/${BRANCH_NAME} make deploy_prod'
+                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/$(basename ${BRANCH_NAME}) make deploy_prod'
                 }
             }
         }
@@ -57,7 +57,7 @@ stage('Cleanup') {
                     // TODO Find a way to remove the empty directory.
                     // I had issues doing it with the user@host:base/path DEPLOYMENT_TARGET_PATH_BASE value,
                     // maybe splitting it in two variables (hostname and base path) is the only solution...
-                    sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/${BRANCH_NAME}'
+                    sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/$(basename ${BRANCH_NAME})'
                 }
             }
         }
