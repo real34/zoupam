@@ -19,26 +19,34 @@ stage('Test') {
 stage('Deploy') {
     node {
         if (BRANCH_NAME=='master') {
-            withCredentials([string(credentialsId: 'DEPLOYMENT_PROD_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH')]) {
-                echo 'Build project and deploy it live'
-                sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH make deploy_prod'
+            sshagent(['DEPLOYMENT_PROD_SSH_AGENT']) {
+                withCredentials([string(credentialsId: 'DEPLOYMENT_PROD_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH')]) {
+                    echo 'Build project and deploy it live'
+                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH make deploy_prod'
+                }
             }
         } else {
-            withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
-                echo 'Build project and deploy it in a feature branch'
-                sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/${BRANCH_NAME} make deploy_prod'
+            sshagent(['DEPLOYMENT_FEATURE_SSH_AGENT']) {
+                withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
+                    echo 'Build project and deploy it in a feature branch'
+                    def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+                    sh 'DEPLOYMENT_TARGET_PATH=$DEPLOYMENT_TARGET_PATH_BASE/${FEATURE_NAME} make deploy_prod'
+                }
             }
         }
     }
 }
 
 stage('Validation') {
-    if (BRANCH_NAME=='master') {
-        echo 'Rien à faire, cela a été validé sur la branche ...'
-    } else {
-        milestone()
-        input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/${BRANCH_NAME} ?", ok: 'Je valide !'
-        milestone()
+    node {
+        if (BRANCH_NAME=='master') {
+            echo 'Rien à faire, cela a été validé sur la branche ...'
+        } else {
+            milestone()
+            def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+            input message: "Est-ce que la fonctionnalité fonctionne correctement sur https://zoupam-features.occi.tech/${FEATURE_NAME}?", ok: 'Je valide !'
+            milestone()
+        }
     }
 }
 
@@ -47,12 +55,15 @@ stage('Cleanup') {
         echo 'Cleaning things up'
         sh 'docker-compose run --rm --entrypoint rm elm -rf elm-stuff node_modules dist/*'
         if (BRANCH_NAME!='master') {
-            withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
-                echo 'Empty remote staging directory'
-                // TODO Find a way to remove the empty directory.
-                // I had issues doing it with the user@host:base/path DEPLOYMENT_TARGET_PATH_BASE value,
-                // maybe splitting it in two variables (hostname and base path) is the only solution...
-                sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/${BRANCH_NAME}'
+            sshagent(['DEPLOYMENT_FEATURE_SSH_AGENT']) {
+                withCredentials([string(credentialsId: 'DEPLOYMENT_FEATURE_TARGET_PATH', variable: 'DEPLOYMENT_TARGET_PATH_BASE')]) {
+                    echo 'Empty remote staging directory'
+                    // TODO Find a way to remove the empty directory.
+                    // I had issues doing it with the user@host:base/path DEPLOYMENT_TARGET_PATH_BASE value,
+                    // maybe splitting it in two variables (hostname and base path) is the only solution...
+                    def FEATURE_NAME = sh(script: 'basename ${BRANCH_NAME}', returnStdout: true)
+                    sh 'rsync -avh --delete dist/ ${DEPLOYMENT_TARGET_PATH_BASE}/${FEATURE_NAME}'
+                }
             }
         }
         // mail body: 'project build successful',
