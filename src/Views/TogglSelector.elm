@@ -87,7 +87,7 @@ fromUrl url =
         , projectIds = projects
         , clientIds = Nothing
         , taskIds = tasks
-        , since = (Just "2017-01-01")
+        , since = (Just "2018-01-01")
         , until = Nothing
         , rounding = Off
         }
@@ -100,7 +100,7 @@ emptyParams =
     , projectIds = (Just [ 45022829 ])
     , clientIds = Nothing
     , taskIds = Nothing
-    , since = (Just "2017-01-01")
+    , since = (Just "2018-01-01")
     , until = Nothing
     , rounding = Off
     }
